@@ -1,0 +1,223 @@
+uni 000 austria
+uni 001 belgium
+uni 002 bulgaria
+uni 003 croatia
+uni 004 czech rep
+uni 005 denmark
+uni 006 england
+uni 007 finland
+uni 008 france
+uni 009 germany
+uni 010 greece
+uni 011 hungary
+uni 012 ireland
+uni 013 italy
+uni 014 latvia
+uni 015 netherlands
+uni 016 n.ireland
+uni 017 norway
+uni 018 poland
+uni 019 portugal
+uni 020 romania
+uni 021 russia
+uni 022 scotland
+uni 023 serbia
+uni 024 slovakia
+uni 025 slovenia
+uni 026 spain
+uni 027 sweden
+uni 028 switzerland
+uni 029 turkey
+uni 030 ukraine
+uni 031 wales
+uni 032 cameroon
+uni 033 egypt
+uni 034 morocco
+uni 035 nigeria
+uni 036 senegal
+uni 037 s.africa
+uni 038 tunisia
+uni 039 costa rica
+uni 040 jamaica
+uni 041 mexico
+uni 042 usa
+uni 043 argentina
+uni 044 brazil
+uni 045 chile
+uni 046 colombia
+uni 047 ecuador
+uni 048 paraguay
+uni 049 peru
+uni 050 uruguay
+uni 051 china
+uni 052 iran
+uni 053 japan
+uni 054 korea
+uni 055 s.arabia
+uni 056 australia
+uni 057 classic argentina
+uni 058 classic brazil
+uni 059 classic england
+uni 060 classic france
+uni 061 classic germany
+uni 062 classic italy
+uni 063 classic netherlands
+
+uni 064 arsenal
+uni 065 aston villa
+uni 066 birmingham
+uni 067 blackburn
+uni 068 bolton
+uni 069 charlton
+uni 070 chelsea
+uni 071 crystal palace
+uni 072 everton
+uni 073 fulham
+uni 074 liverpool
+uni 075 man city
+uni 076 man utd
+uni 077 middlesbrough
+uni 078 newcastle
+uni 079 norwich
+uni 080 portsmouth
+uni 081 southampton
+uni 082 tottenham
+uni 083 w.b.a
+
+uni 084 aj ajaccio
+uni 085 monaco
+uni 086 auxerre
+uni 087 bastia
+uni 088 bordeaux
+uni 089 caen
+uni 090 istres
+uni 091 lilles
+uni 092 lyon
+uni 093 metz
+uni 094 nantes
+uni 095 nice
+uni 096 marseille
+uni 097 p.s.g
+uni 098 lens
+uni 099 rennes
+uni 100 st etienne
+uni 101 socheaux
+uni 102 strasbourg
+uni 103 toulouse
+
+uni 104 arminia bielfeld
+uni 105 bayer leverkusen
+uni 106 bayern munich
+uni 107 vfl bochum
+uni 108 borussia dortmund
+uni 109 monchengladbach
+uni 110 sc freiburg
+uni 111 hamburg
+uni 112 hannover 96
+uni 113 hansa rostock
+uni 114 hertha berlin
+uni 115 kaiserslauten
+uni 116 mainz
+uni 117 nurnberg
+uni 118 schalke 04
+uni 119 stuttgart
+uni 120 wolfsburg
+uni 121 werder bremen
+
+uni 122 ac milan
+uni 123 as roma
+uni 124 atalanta
+uni 125 bologna
+uni 126 brescia
+uni 127 cagliari
+uni 128 chievo
+uni 129 fiorentina
+uni 130 inter milan
+uni 131 juventus
+uni 132 lazio
+uni 133 lecce
+uni 134 livorno
+uni 135 messina
+uni 136 palermo
+uni 137 parma
+uni 138 reggina
+uni 139 sampdoria
+uni 140 siena
+uni 141 udinese
+
+uni 142 ado den haag
+uni 143 ajax
+uni 144 az
+uni 145 de graafschap
+uni 146 den bosch
+uni 147 gronigen
+uni 148 fc twente
+uni 149 fc utrecht
+uni 150 feyenoord
+uni 151 nac breda
+uni 152 nec nijmegan
+uni 153 p.s.v
+uni 154 rbc roosendaal
+uni 155 rkc waalwijk
+uni 156 roda jc
+uni 157 sc heerenveen
+uni 158 vitesse
+uni 159 willem 11
+
+uni 160 albacete
+uni 161 osasuna
+uni 162 athletic club
+uni 163 atletico madrid
+uni 164 numancia
+uni 165 barcelona
+uni 166 getafe
+uni 167 levante
+uni 168 malaga
+uni 169 real betis
+uni 170 real madrid
+uni 171 racing club santander
+uni 172 real sociedad
+uni 173 real zaragoza
+uni 174 deportivo
+uni 175 espanyol
+uni 176 mallorca
+uni 177 sevilla
+uni 178 valencia
+uni 179 villareal
+
+uni 180 boca juniors
+uni 181 river plate
+
+
+uni 182 brugge
+uni 183 anderlecht
+
+uni 184 cruzeiro
+
+uni 185 sparta prague
+
+uni 186 aek athens
+
+uni 187 olympiakos
+uni 188 panathinaikos
+
+uni 189 benfica
+uni 190 fc porto
+uni 191 sporting lisbon
+
+uni 192 lokomotiv moscow
+uni 193 spartak moscow
+
+uni 194 glagow celtic
+uni 195 rangers
+
+uni 196 partizan belgrade
+
+uni 197 besiktas
+uni 198 galatasaray
+
+uni 199 dynamo kiev
+
+uni 200 pes united
+uni 201 we united
+
