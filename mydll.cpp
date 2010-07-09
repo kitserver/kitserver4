@@ -69,7 +69,7 @@ extern char* GAME_GUID[5];
 extern DWORD GAME_GUID_OFFSETS[5];
 
 #define CODELEN 23
-#define DATALEN 9
+#define DATALEN 11
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
 
@@ -93,6 +93,7 @@ enum {
 	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
 	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
 	KIT_CHECK_TRIGGER,
+    PROJ_W, CULL_W,
 };
 
 // Code addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
@@ -123,19 +124,24 @@ DWORD codeArray[5][CODELEN] = {
 DWORD dataArray[5][DATALEN] = {
 	// PES4 DEMO 2
 	{ 0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
-	  0, 0, 0, 0 },
+	  0, 0, 0, 0,
+      0, 0 },
 	// PES4 DEMO
 	{ 0x48c7a60, 0x48c8a02, 0x1e019b0, 202, 0,
-	  0, 0, 0, 0 },
+	  0, 0, 0, 0,
+      0, 0 },
 	// PES4 1.10
 	{ 0x4e40ca0, 0x4e41c42, 0x215d570, 205, 0x232f208,
-	  0x4def7a0, 0xa060bc, 0x4e436c4, 0x22fb5f8 },
+	  0x4def7a0, 0xa060bc, 0x4e436c4, 0x22fb5f8,
+      0x2381398, 0x2381374 },
 	// PES4 1.0
 	{ 0x4e3ed40, 0x4e3fce2, 0x215b5c0, 205, 0x232d290,
-	  0x4ded840, 0xa040bc, 0x4e416c4, 0x22f9698 },
+	  0x4ded840, 0xa040bc, 0x4e416c4, 0x22f9698,
+      0x237f418, 0x237f3f4 },
 	// WE8I US
 	{ 0x4e40e40, 0x4e41de2, 0x215d5b0, 205, 0x232f348,
-	  0x4def780, 0xa060bc, 0x4e43864, 0x22fb648 },
+	  0x4def780, 0xa060bc, 0x4e43864, 0x22fb648,
+      0x23814d8, 0x23814b4 },
 };
 
 // NOTE: when looking for mirror address of 0x4c90c98 (PES4 1.10),
@@ -2690,13 +2696,13 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 {
     if (!_aspectRatioSet) {
         // adjust aspect ratio
-        if (g_config.aspectRatio > 0.0f) {
+        if (data[PROJ_W] && data[CULL_W] && g_config.aspectRatio >0.0f) {
             LogWithDouble("Setting aspect-ratio: %0.4f", 
                     (double)g_config.aspectRatio);
             float factor = g_config.aspectRatio / (512.0/384.0);
 
             DWORD newProtection = PAGE_EXECUTE_READWRITE;
-            float* ar_p = (float*)0x23814d8;
+            float* ar_p = (float*)data[PROJ_W];
             if (VirtualProtect(ar_p,4,newProtection,&g_savedProtection)) {
                 *ar_p = 512.0*factor;
                 LogWithDouble("PROJECTION_W: %0.2f", (double)*ar_p);
@@ -2704,7 +2710,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
             else {
                 Log("FAILED to change aspect-ratio (PROJECTION)");
             }
-            DWORD* ar_c = (DWORD*)0x23814b4;
+            DWORD* ar_c = (DWORD*)data[CULL_W];
             if (VirtualProtect(ar_c,4,newProtection,&g_savedProtection)) {
                 *ar_c = (int)(512*factor)+1;
                 LogWithNumber("CULLING_W: %d", *ar_c);

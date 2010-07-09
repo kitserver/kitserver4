@@ -1,4 +1,4 @@
-KitServer 4                                                    July 8, 2010
+KitServer 4                                                    July 9, 2010
 ===========================================================================
 Version 4.3.11
 
@@ -296,7 +296,39 @@ with kctrl.exe. For example, to change the value of "kit.useLargeTexture"
 you will need to manually edit kserv.cfg.
 
 
-8. TROUBLESHOOTING
+8. ASPECT RATIO AND GAME SPEED
+------------------------------
+
+While PES4/WE8I support widescreen modes (depending on the video card),
+the aspect ratio is always fixed at 4:3. On newer LCD monitors, which are
+almost always widescreen with 16:10 proportions or 16:9, the players look
+too fat, and the ball isn't round. This can now be corrected by using
+a kserv.cfg option called "aspect.ratio". You can set it to whatever 
+value you want: to calculate it, just divide the width of your screen
+by the height of your screen. For non-widescreen monitors, it would be
+for example 640/480 = 1.3333. For a widescreen resolution like 1280x800,
+you'd have: 1280/800 = 1.6.
+Example setting in kserv.cfg:
+
+aspect.ratio = 1.6000
+
+Keep in mind that you can also play on lower resolutions, but with correct
+aspect ratio. For example, say you have a widescreen monitor, but can 
+only play on 640x480, because that's what you get the best performance with.
+In a window mode, you wouldn't want to alter aspect ratio, but if you play
+in fullscreen, set it to 1.6 and enjoy correct proportions of the players
+and the round ball :)
+
+You can also alter the game speed now, if say your game runs too fast, or
+too slow for your liking. It is done with "game.speed" option in kserv.cfg
+file. The value of 1.0 gives the normal, unmodified speed. With values
+smaller than 1.0, you get a slower game, for bigger than 1.0 - faster.
+Example setting in kserv.cfg:
+
+game.speed = 0.97
+
+
+9. TROUBLESHOOTING
 ------------------
 
 Sometimes, during Kitserver install, the "auto-detect" selection of 

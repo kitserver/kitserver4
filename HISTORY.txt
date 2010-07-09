@@ -1,5 +1,10 @@
-KitServer CHANGE LOG                                          April 22, 2005
+KitServer CHANGE LOG                                            July 9, 2010
 ============================================================================
+
+4.3.11
+------
+- added explicit aspect-ratio setting (in kserv.cfg)
+- game speed control option (in kserv.cfg)
 
 4.3.10
 ------
