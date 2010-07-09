@@ -18,6 +18,8 @@
 #define DEFAULT_VKEY_RANDOM_BALL 0x52
 #define DEFAULT_VKEY_RESET_BALL 0x43
 #define DEFAULT_USE_LARGE_TEXTURE TRUE
+#define DEFAULT_ASPECT_RATIO -1.0f
+#define DEFAULT_GAME_SPEED 1.0f
 
 typedef struct _KSERV_CONFIG_STRUCT {
 	DWORD  debug;
@@ -31,6 +33,8 @@ typedef struct _KSERV_CONFIG_STRUCT {
 	WORD   vKeyRandomBall;
 	WORD   vKeyResetBall;
 	BOOL   useLargeTexture;
+    float  aspectRatio;
+    float  gameSpeed;
 
 } KSERV_CONFIG;
 

@@ -26,6 +26,7 @@
 #include "d3d8.h"
 #include "d3dx8tex.h"
 
+#include "apihijack.h"
 #include <list>
 
 #define SAFEFREE(ptr) if (ptr) { HeapFree(GetProcessHeap(),0,ptr); ptr=NULL; }
@@ -49,6 +50,8 @@ KSERV_CONFIG g_config = {
 	DEFAULT_VKEY_RANDOM_BALL,
 	DEFAULT_VKEY_RESET_BALL,
 	DEFAULT_USE_LARGE_TEXTURE,
+    DEFAULT_ASPECT_RATIO,
+    DEFAULT_GAME_SPEED,
 };
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
@@ -57,6 +60,7 @@ KSERV_CONFIG g_config = {
 End of shared section 
 **************************/
 
+bool _aspectRatioSet = false;
 bool g_fontInitialized = false;
 CD3DFont* g_font = NULL;
 
@@ -342,6 +346,8 @@ HRESULT STDMETHODCALLTYPE JuceEndScene(IDirect3DDevice8* self);
 HRESULT STDMETHODCALLTYPE JuceGetSurfaceLevel(IDirect3DTexture8* self,
 UINT level, IDirect3DSurface8** ppSurfaceLevel);
 
+BOOL WINAPI Override_QueryPerformanceFrequency(
+        LARGE_INTEGER *lpPerformanceFrequency);
 BOOL SignExists(DWORD sig, char* filename);
 DWORD LoadTexture(BYTE** tex, char* filename);
 void ApplyBallTexture(BYTE* orgBall, BYTE* ballTex);
@@ -940,6 +946,8 @@ void GetBackBufferInfo(IDirect3DDevice8* d3dDevice)
 
 		Log("GetBackBufferInfo: got new back buffer format and info.");
 		g_bGotFormat = true;
+
+
 	}
 }
 
@@ -1320,6 +1328,42 @@ void InitKserv()
 
 	// clear-out kit extras
 	ZeroMemory(g_kitExtras, sizeof(KitEntry*)*0x500);
+
+    // read configuration
+    if (g_config.gameSpeed >= 0.0001)
+    {
+       SDLLHook Kernel32Hook = 
+       {
+          "KERNEL32.DLL",
+          false, NULL,		// Default hook disabled, NULL function pointer.
+          {
+              { "QueryPerformanceFrequency", 
+                  Override_QueryPerformanceFrequency },
+              { NULL, NULL }
+          }
+       };
+       HookAPICalls( &Kernel32Hook );
+    }
+    LogWithDouble("game.speed = %0.2f", (double)g_config.gameSpeed);
+}
+
+BOOL WINAPI Override_QueryPerformanceFrequency(
+        LARGE_INTEGER *lpPerformanceFrequency)
+{
+    LARGE_INTEGER metric;
+    BOOL result = QueryPerformanceFrequency(&metric);
+    //LogWithTwoNumbers( 
+    //        "(old) hi=%08x, lo=%08x", metric.HighPart, metric.LowPart);
+    if (fabs(g_config.gameSpeed-1.0)>0.0001)
+    {
+        Log("Changing frequency");
+        metric.HighPart /= g_config.gameSpeed;
+        metric.LowPart /= g_config.gameSpeed;
+    }
+    //LogWithTwoNumbers(
+    //        "(new) hi=%08x, lo=%08x", metric.HighPart, metric.LowPart);
+    *lpPerformanceFrequency = metric;
+    return result;
 }
 
 /**
@@ -2644,6 +2688,34 @@ DWORD FindKitId(DWORD offset, DWORD* size)
  */
 DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 {
+    if (!_aspectRatioSet) {
+        // adjust aspect ratio
+        if (g_config.aspectRatio > 0.0f) {
+            LogWithDouble("Setting aspect-ratio: %0.4f", 
+                    (double)g_config.aspectRatio);
+            float factor = g_config.aspectRatio / (512.0/384.0);
+
+            DWORD newProtection = PAGE_EXECUTE_READWRITE;
+            float* ar_p = (float*)0x23814d8;
+            if (VirtualProtect(ar_p,4,newProtection,&g_savedProtection)) {
+                *ar_p = 512.0*factor;
+                LogWithDouble("PROJECTION_W: %0.2f", (double)*ar_p);
+            }
+            else {
+                Log("FAILED to change aspect-ratio (PROJECTION)");
+            }
+            DWORD* ar_c = (DWORD*)0x23814b4;
+            if (VirtualProtect(ar_c,4,newProtection,&g_savedProtection)) {
+                *ar_c = (int)(512*factor)+1;
+                LogWithNumber("CULLING_W: %d", *ar_c);
+            }
+            else {
+                Log("FAILED to change aspect-ratio (CULLING)");
+            }
+        }
+        _aspectRatioSet = true;
+    }
+
 	TRACE("JuceUniDecode: CALLED.");
 	TRACE2("JuceUniDecode: addr1 = %08x", addr1);
 	TRACE2("JuceUniDecode: addr2 = %08x", addr2);

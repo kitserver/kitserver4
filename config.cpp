@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "config.h"
 #include "log.h"
@@ -122,6 +123,22 @@ BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile)
 			LogWithNumber("ReadConfig: useLargeTexture = %d\n", value);
 			config->useLargeTexture = value;
 		}
+        else if (lstrcmp(name, "aspect.ratio")==0)
+        {
+            float fValue = 0.0f;
+            if (sscanf(pValue, "%f", &fValue)!=1) continue;
+            LogWithDouble("ReadConfig: aspect.ratio = %0.4f\n", 
+                    (double)fValue);
+            config->aspectRatio = fValue;
+        }
+        else if (lstrcmp(name, "game.speed")==0)
+        {
+            float fValue = 0.0f;
+            if (sscanf(pValue, "%f", &fValue)!=1) continue;
+            LogWithDouble("ReadConfig: game.speed = %0.2f\n", 
+                    (double)fValue);
+            config->gameSpeed = fValue;
+        }
 	}
 	fclose(cfg);
 
@@ -175,6 +192,8 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 	BOOL bWrittenVKeyRandomBall = false;
 	BOOL bWrittenVKeyResetBall = false;
 	BOOL bWrittenUseLargeTexture = false;
+	BOOL bWrittenAspectRatio = false;
+	BOOL bWrittenGameSpeed = false;
 
 	char* line = buf; BOOL done = false;
 	char* comment = NULL;
@@ -245,6 +264,18 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 			fprintf(cfg, "kit.useLargeTexture = %d\n", config->useLargeTexture);
 			bWrittenUseLargeTexture = true;
 		}
+        else if ((setting = strstr(line, "aspect.ratio")) &&
+                 (comment == NULL || setting < comment))
+        {
+            fprintf(cfg, "aspect.ratio = %0.4f\n", config->aspectRatio);
+            bWrittenAspectRatio = true;
+        }
+        else if ((setting = strstr(line, "game.speed")) &&
+                 (comment == NULL || setting < comment))
+        {
+            fprintf(cfg, "game.speed = %0.2f\n", config->gameSpeed);
+            bWrittenGameSpeed = true;
+        }
 
 		else
 		{
@@ -274,6 +305,10 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 		fprintf(cfg, "vKey.randomBall = 0x%02x\n", config->vKeyRandomBall);
 	if (!bWrittenVKeyResetBall)
 		fprintf(cfg, "vKey.resetBall = 0x%02x\n", config->vKeyResetBall);
+	if (!bWrittenAspectRatio && config->aspectRatio > 0.0f)
+		fprintf(cfg, "aspect.ratio = %0.4f\n", config->aspectRatio);
+	if (!bWrittenGameSpeed && (fabs(config->gameSpeed - 1.0f)>=0.0001))
+		fprintf(cfg, "game.speed = %0.2f\n", config->gameSpeed);
 
 	// release buffer
 	HeapFree(GetProcessHeap(), 0, buf);

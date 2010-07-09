@@ -21,10 +21,11 @@ regtools.obj: regtools.cpp regtools.h
 log.obj: log.cpp log.h
 crc32.obj: crc32.cpp crc32.h
 afsreader.obj: afsreader.cpp afsreader.h
+apihijack.obj: apihijack.cpp apihijack.h
 
-kserv.lib: mydll.obj detect.obj kdb.obj log.obj config.obj imageutil.obj d3dfont.obj dxutil.obj crc32.obj afsreader.obj
+kserv.lib: mydll.obj detect.obj kdb.obj log.obj config.obj imageutil.obj d3dfont.obj dxutil.obj crc32.obj afsreader.obj apihijack.obj
 kserv.dll: kserv.lib mydll.res
-	$(LINK) $(LFLAGS) /out:kserv.dll /DLL mydll.obj detect.obj kdb.obj log.obj config.obj crc32.obj afsreader.obj imageutil.obj d3dfont.obj dxutil.obj mydll.res $(LIBS) d3dx8.lib winmm.lib /LIBPATH:\DXSDK\lib
+	$(LINK) $(LFLAGS) /out:kserv.dll /DLL mydll.obj detect.obj kdb.obj log.obj config.obj crc32.obj afsreader.obj imageutil.obj d3dfont.obj dxutil.obj apihijack.obj mydll.res $(LIBS) d3dx8.lib winmm.lib /LIBPATH:\DXSDK\lib
 mydll.obj: mydll.cpp mydll.h shared.h config.h kdb.h
 detect.obj: detect.cpp
 
