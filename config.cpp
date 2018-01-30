@@ -139,6 +139,31 @@ BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile)
                     (double)fValue);
             config->gameSpeed = fValue;
         }
+		else if (lstrcmp(name, "internal.resolution.width")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: internalResolutionWidth = %d\n", value);
+			config->internalResolutionWidth = value;
+		}
+		else if (lstrcmp(name, "internal.resolution.height")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: internalResolutionHeight = %d\n", value);
+			config->internalResolutionHeight = value;
+		}
+		else if (lstrcmp(name, "fullscreen.width")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: fullscreenWidth = %d\n", value);
+			config->fullscreenWidth = value;
+		}
+		else if (lstrcmp(name, "fullscreen.height")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: fullscreenHeight = %d\n", value);
+			config->fullscreenHeight = value;
+		}
+
 	}
 	fclose(cfg);
 
@@ -194,6 +219,10 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 	BOOL bWrittenUseLargeTexture = false;
 	BOOL bWrittenAspectRatio = false;
 	BOOL bWrittenGameSpeed = false;
+	BOOL bWrittenIntresWidth = false;
+	BOOL bWrittenIntresHeight = false;
+    BOOL bWrittenFullscreenWidth = false;
+    BOOL bWrittenFullscreenHeight = false;
 
 	char* line = buf; BOOL done = false;
 	char* comment = NULL;
@@ -276,6 +305,30 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
             fprintf(cfg, "game.speed = %0.2f\n", config->gameSpeed);
             bWrittenGameSpeed = true;
         }
+		else if ((setting = strstr(line, "internal.resolution.width")) && 
+				 (comment == NULL || setting < comment))
+		{
+			fprintf(cfg, "internal.resolution.width = %d\n", config->internalResolutionWidth);
+			bWrittenIntresWidth = true;
+		}
+		else if ((setting = strstr(line, "internal.resolution.height")) && 
+				 (comment == NULL || setting < comment))
+		{
+			fprintf(cfg, "internal.resolution.height = %d\n", config->internalResolutionHeight);
+			bWrittenIntresHeight = true;
+		}
+		else if ((setting = strstr(line, "fullscreen.width")) && 
+				 (comment == NULL || setting < comment))
+		{
+			fprintf(cfg, "fullscreen.width = %d\n", config->fullscreenWidth);
+			bWrittenFullscreenWidth = true;
+		}
+		else if ((setting = strstr(line, "fullscreen.height")) && 
+				 (comment == NULL || setting < comment))
+		{
+			fprintf(cfg, "fullscreen.height = %d\n", config->fullscreenHeight);
+			bWrittenFullscreenHeight = true;
+		}
 
 		else
 		{
@@ -309,6 +362,16 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 		fprintf(cfg, "aspect.ratio = %0.4f\n", config->aspectRatio);
 	if (!bWrittenGameSpeed && (fabs(config->gameSpeed - 1.0f)>=0.0001))
 		fprintf(cfg, "game.speed = %0.2f\n", config->gameSpeed);
+	if (!bWrittenUseLargeTexture)
+		fprintf(cfg, "kit.useLargeTexture = %d\n", config->useLargeTexture);
+	if (!bWrittenIntresWidth)
+		fprintf(cfg, "internal.resolution.width = %d\n", config->internalResolutionWidth);
+	if (!bWrittenIntresHeight)
+		fprintf(cfg, "internal.resolution.height = %d\n", config->internalResolutionHeight);
+	if (!bWrittenFullscreenWidth)
+		fprintf(cfg, "fullscreen.width = %d\n", config->fullscreenWidth);
+	if (!bWrittenFullscreenHeight)
+		fprintf(cfg, "fullscreen.height = %d\n", config->fullscreenHeight);
 
 	// release buffer
 	HeapFree(GetProcessHeap(), 0, buf);

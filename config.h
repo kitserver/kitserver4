@@ -20,6 +20,10 @@
 #define DEFAULT_USE_LARGE_TEXTURE TRUE
 #define DEFAULT_ASPECT_RATIO -1.0f
 #define DEFAULT_GAME_SPEED 1.0f
+#define DEFAULT_INTRES_WIDTH 0
+#define DEFAULT_INTRES_HEIGHT 0
+#define DEFAULT_FULLSCREEN_WIDTH 0
+#define DEFAULT_FULLSCREEN_HEIGHT 0
 
 typedef struct _KSERV_CONFIG_STRUCT {
 	DWORD  debug;
@@ -35,6 +39,10 @@ typedef struct _KSERV_CONFIG_STRUCT {
 	BOOL   useLargeTexture;
     float  aspectRatio;
     float  gameSpeed;
+    DWORD  internalResolutionWidth;
+    DWORD  internalResolutionHeight;
+    DWORD  fullscreenWidth;
+    DWORD  fullscreenHeight;
 
 } KSERV_CONFIG;
 

@@ -52,6 +52,10 @@ KSERV_CONFIG g_config = {
 	DEFAULT_USE_LARGE_TEXTURE,
     DEFAULT_ASPECT_RATIO,
     DEFAULT_GAME_SPEED,
+    DEFAULT_INTRES_WIDTH,
+    DEFAULT_INTRES_HEIGHT,
+    DEFAULT_FULLSCREEN_WIDTH,
+    DEFAULT_FULLSCREEN_HEIGHT,
 };
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
@@ -61,6 +65,7 @@ End of shared section
 **************************/
 
 bool _aspectRatioSet = false;
+bool _internalResSet = false;
 bool g_fontInitialized = false;
 CD3DFont* g_font = NULL;
 
@@ -69,7 +74,7 @@ extern char* GAME_GUID[5];
 extern DWORD GAME_GUID_OFFSETS[5];
 
 #define CODELEN 23
-#define DATALEN 11
+#define DATALEN 13
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
 
@@ -94,6 +99,7 @@ enum {
 	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
 	KIT_CHECK_TRIGGER,
     PROJ_W, CULL_W,
+    INTRES_WIDTH, INTRES_HEIGHT,
 };
 
 // Code addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
@@ -125,23 +131,28 @@ DWORD dataArray[5][DATALEN] = {
 	// PES4 DEMO 2
 	{ 0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
 	  0, 0, 0, 0,
-      0, 0 },
+      0, 0,
+      0, 0},
 	// PES4 DEMO
 	{ 0x48c7a60, 0x48c8a02, 0x1e019b0, 202, 0,
 	  0, 0, 0, 0,
-      0, 0 },
+      0, 0,
+      0, 0},
 	// PES4 1.10
 	{ 0x4e40ca0, 0x4e41c42, 0x215d570, 205, 0x232f208,
 	  0x4def7a0, 0xa060bc, 0x4e436c4, 0x22fb5f8,
-      0x2381398, 0x2381374 },
+      0x2381398, 0x2381374,
+      0x215dce0, 0x215dce4},
 	// PES4 1.0
 	{ 0x4e3ed40, 0x4e3fce2, 0x215b5c0, 205, 0x232d290,
 	  0x4ded840, 0xa040bc, 0x4e416c4, 0x22f9698,
-      0x237f418, 0x237f3f4 },
+      0x237f418, 0x237f3f4,
+      0, 0},
 	// WE8I US
 	{ 0x4e40e40, 0x4e41de2, 0x215d5b0, 205, 0x232f348,
 	  0x4def780, 0xa060bc, 0x4e43864, 0x22fb648,
-      0x23814d8, 0x23814b4 },
+      0x23814d8, 0x23814b4,
+      0, 0},
 };
 
 // NOTE: when looking for mirror address of 0x4c90c98 (PES4 1.10),
@@ -302,7 +313,7 @@ typedef HRESULT (STDMETHODCALLTYPE *PFNUPDATETEXTUREPROC)(IDirect3DDevice8* self
 IDirect3DBaseTexture8* pSrc, IDirect3DBaseTexture8* pDest);
 typedef HRESULT (STDMETHODCALLTYPE *PFNPRESENTPROC)(IDirect3DDevice8* self, 
 CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unused);
-typedef HRESULT (STDMETHODCALLTYPE *PFNRESETPROC)(IDirect3DDevice8* self, LPVOID);
+typedef HRESULT (STDMETHODCALLTYPE *PFNRESETPROC)(IDirect3DDevice8* self, D3DPRESENT_PARAMETERS* params);
 typedef HRESULT (STDMETHODCALLTYPE *PFNCOPYRECTSPROC)(IDirect3DDevice8* self,
 IDirect3DSurface8* pSourceSurface, CONST RECT* pSourceRectsArray, UINT cRects,
 IDirect3DSurface8* pDestinationSurface, CONST POINT* pDestPointsArray);
@@ -884,10 +895,9 @@ void DrawKitLabels(IDirect3DDevice8* dev)
 
 /* New Reset function */
 EXTERN_C HRESULT _declspec(dllexport) STDMETHODCALLTYPE JuceReset(
-IDirect3DDevice8* self, LPVOID params)
+IDirect3DDevice8* self, D3DPRESENT_PARAMETERS* params)
 {
-	TRACE("JuceReset: called.");
-	Log("JuceReset: cleaning-up.");
+	Log("JuceReset: called.");
 
 	// drop HWND 
 	hProcWnd = NULL;
@@ -903,6 +913,11 @@ IDirect3DDevice8* self, LPVOID params)
 	DeleteDeviceObjects(self);
 
 	g_bGotFormat = false;
+
+    if (params->Windowed == FALSE && g_config.fullscreenWidth > 0 && g_config.fullscreenHeight > 0) {
+        params->BackBufferWidth = g_config.fullscreenWidth;
+        params->BackBufferHeight = g_config.fullscreenHeight;
+    }
 
 	// CALL ORIGINAL FUNCTION
 	HRESULT res = g_orgReset(self, params);
@@ -2205,6 +2220,21 @@ UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool, IDirect3DTexture8** pp
 	IDirect3DTexture8* texToBoost = NULL;
 
 	TRACEX("JuceCreateTexture: (%dx%d), levels = %d", width, height, levels);
+
+    // set internal resolution, unless already set
+    if (!_internalResSet) {
+        _internalResSet = true;
+        if (g_config.internalResolutionWidth > 0 && g_config.internalResolutionHeight > 0) {
+            DWORD *w = (DWORD*)data[INTRES_WIDTH];
+            DWORD *h = (DWORD*)data[INTRES_HEIGHT];
+            if (w != NULL && h != NULL) {
+                *w = g_config.internalResolutionWidth;
+                *h = g_config.internalResolutionHeight;
+                LogWithNumber("Internal resolution width set to: %d", *w);
+                LogWithNumber("Internal resolution height set to: %d", *h);
+            }
+        }
+    }
 	
 	// Boost the kit texture
 	// We're assuming here that by the time next texture is created, the
@@ -2422,6 +2452,10 @@ DWORD STDMETHODCALLTYPE JuceSetFilePointer(HANDLE handle, LONG offset, PLONG upp
 
 			TRACE2("g_orgCreateTexture = %08x", (DWORD)g_orgCreateTexture);
 			TRACE2("JuceCreateTexture = %08x", (DWORD)JuceCreateTexture);
+
+			// hook Present method
+			g_orgReset = (PFNRESETPROC)vtable[14];
+			vtable[14] = (DWORD)JuceReset;
 
 			/*
 			// hook SetTexture method
@@ -3504,7 +3538,7 @@ DWORD JuceKitPickSetKitAttributes(DWORD n)
 
 		TRACE("JuceKitPickSetKitAttributes: Present hooked.");
 
-		// hook Present method
+		// hook Reset method
 		g_orgReset = (PFNRESETPROC)vtable[14];
 		vtable[14] = (DWORD)JuceReset;
 

@@ -1,0 +1,7 @@
+*.obj
+*.exe
+*.dll
+*.lib
+*.res
+*.exp
+.DS_Store
