@@ -1,6 +1,6 @@
-KitServer 4                                                    July 9, 2010
+KitServer 4                                                January 30, 2018
 ===========================================================================
-Version 4.3.11
+Version 4.4.0
 
 
 1. INTRODUCTION
@@ -328,7 +328,42 @@ Example setting in kserv.cfg:
 game.speed = 0.97
 
 
-9. TROUBLESHOOTING
+9. FULLSCREEN AND INTERNAL RESOLUTION
+-------------------------------------
+
+Since version 4.4.0, two new sets of options are supported in kserv.cfg,
+which allow to enforce custom fullscreen resolution, and also set the
+so-called "internal" resolution of the game rendering engine.
+
+Fullscreen settings are useful, if you have a nice new widescreen
+monitor, which the game does not recognize. In that situation, just
+set the resolution in kserv.cfg, like this:
+Example:
+
+fullscreen.width = 2800
+fullscreen.height = 1800
+
+The other set of settings affect the internal resolution of the game
+engine. The way it works is something like this: the game renders the
+entire scene into a predefined off-screen buffer, and then resamples
+that buffer to the main window (or fullscreen). This off-screen buffer
+is what we need to modify if we wish to get perfect rendering, without
+zig-zag edges and so for. Default "High Quality" dimentions for that
+buffer are 1024x1024, which is not good enough, if you are playing on
+a high resolution (4k) screen. What you want to do, is set this 
+internal resolution to at least the size of your window/fullscreen.
+
+You can also try setting internal resolution to even higher values,
+if your videocard is good enough and supports such buffers. If that
+is the case, then you will be able to get even better, anti-aliased
+edges in the game!
+Example:
+
+internal.resolution.width = 3072
+internal.resolution.height = 2048
+
+
+10. TROUBLESHOOTING
 ------------------
 
 Sometimes, during Kitserver install, the "auto-detect" selection of 
@@ -354,6 +389,7 @@ box saying that Kitserver was successfully installed should appear.
 ----------
 
 Programming: Juce
+Internal resolution research: Kingsley813
 Testing: Jim (biker_jim_uk)
 Sample kits: (c)Spark, (c)kEL
 Sample balls: (c)Spark

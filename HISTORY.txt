@@ -1,5 +1,9 @@
-KitServer CHANGE LOG                                            July 9, 2010
+KitServer CHANGE LOG                                        January 30, 2018
 ============================================================================
+
+4.4.0
+-----
+- support for fullscreen and internal resolution
 
 4.3.11
 ------
