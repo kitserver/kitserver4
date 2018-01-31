@@ -1505,6 +1505,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 	else if (dwReason == DLL_PROCESS_DETACH)
 	{
 		Log("DLL detaching...");
+        /*
 
 		// free test uniform memory
 		if (g_tex) HeapFree(GetProcessHeap(), 0, g_tex);
@@ -1594,6 +1595,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 			ptr[0] = (DWORD)code[C_SETKITATTRIBUTES] - (DWORD)(code[C_SETKITATTRIBUTES_CS8] + 5);
 			Log("code[C_SETKITATTRIBUTES] UNHOOKED at call-site 8");
 		}
+        */
 
 		/*
 		// unhook code[C_UNIDECRYPT]
@@ -1605,6 +1607,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 		}
 		*/
 
+        /*
 		// unhook SetFilePointer
 		if (bSetFilePointerHooked)
 		{
@@ -1619,10 +1622,10 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 
 		Log("kit and palette memory freed.");
 
-		/* uninstall keyboard hook */
+		// uninstall keyboard hook
 		UninstallKeyboardHook();
 
-		/* restore original pointers */
+		// restore original pointers
 		RestoreDeviceMethods();
 
 		Log("Device methods restored.");
@@ -1632,7 +1635,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 		DeleteDeviceObjects(g_device);
 		Log("DeleteDeviceObjects done.");
 
-		/* release interfaces */
+		// release interfaces
 		if (g_rgbBuf != NULL)
 		{
 			HeapFree(procHeap, 0, g_rgbBuf);
@@ -1647,8 +1650,9 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 
 		SAFE_DELETE( g_font );
 		TRACE("g_font SAFE_DELETEd.");
+        */
 
-		/* close specific log file */
+		// close specific log file
 		Log("Closing log.");
 		CloseLog();
 	}
