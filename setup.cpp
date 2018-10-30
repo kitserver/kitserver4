@@ -21,7 +21,7 @@ bool g_advancedMode = false;
 DWORD LoadLibraryAddr[] = {
 	0,            // auto-detect
 	0x77e7d961,   // WinXP
-	0x7c5768fb,   // Win2K 
+	0x7c5768fb,   // Win2K
 };
 
 void MyMessageBox(char* fmt, DWORD value);
@@ -34,7 +34,7 @@ extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
 
 #define NUM_SIG_HEADERS 1
 IMAGE_SECTION_HEADER SIG_HEADER[NUM_SIG_HEADERS] = {
-	{ '.','N','o','R','G','\0','\0','\0', 
+	{ '.','N','o','R','G','\0','\0','\0',
 	  0x3000, 0x4a62000, 0x3000, 0x284a00, 0, 0, 0, 0, 0xc0000040 }
 };
 
@@ -131,21 +131,24 @@ void InstallKserv(void)
 		sprintf(buf, "\
 ======== WRONG FILE! =========\n\
 File %s is an unknown EXE-file.\n\
-It is not recognized as PES4, PES4-demo\n\
-or WE8 executable. Therefore,\n\
-KitServer will NOT be installed for it.", fileName);
+Therefore,\n\
+KitServer will NOT be attached to it.", fileName);
 
 		MessageBox(hWnd, buf, "KitServer 4 Setup Message", 0);
 		return;
 	}
 
-	// get the address of LoadLibrary function, which is different 
-	// Here, we're taking advantage of the fact that Kernel32.dll, 
-	// which contains the LoadLibrary function is never relocated, so 
+	// get the address of LoadLibrary function, which is different
+	// Here, we're taking advantage of the fact that Kernel32.dll,
+	// which contains the LoadLibrary function is never relocated, so
 	// the address of LoadLibrary will always be the same.
 	HMODULE krnl = GetModuleHandle("kernel32.dll");
 	DWORD loadLib = (DWORD)GetProcAddress(krnl, "LoadLibraryA");
-	
+	// Well, this doesn't work for Vista, so we don't determine the
+	// address ourselves but use the one from the import table, for
+	// which we get the pointer with the getImportThunkRVA command
+
+    /*
 	// get currently selected item in OS choices list
 	int osIdx = (int)SendMessage(g_osListControl, CB_GETCURSEL, 0, 0);
 	if (osIdx > 0)
@@ -154,17 +157,20 @@ KitServer will NOT be installed for it.", fileName);
 		// for chosen OS.
 		loadLib = LoadLibraryAddr[osIdx];
 	}
+    */
 
 	DWORD ep, ib;
 	DWORD dataOffset, dataVA;
 	DWORD codeOffset, codeVA;
-	DWORD loadLibAddr, kservAddr;
+	DWORD loadLibAddr, kservAddr, loadLibAddr1;
 	DWORD newEntryPoint;
 
 	FILE* f = fopen(fileName, "r+b");
 	if (f != NULL)
 	{
 		// Install
+		loadLibAddr1 = getImportThunkRVA(f, "kernel32.dll","LoadLibraryA");
+
 		if (SeekEntryPoint(f))
 		{
 			fread(&ep, sizeof(DWORD), 1, f);
@@ -185,6 +191,14 @@ KitServer will NOT be installed for it.", fileName);
 		if (SeekSectionHeader(f, ".rdata")) {
 			fread(&dataHeader, sizeof(IMAGE_SECTION_HEADER), 1, f);
 
+            //adjust SizeOfRawData (needed for WE9LEK-nocd)
+            int rem = dataHeader.SizeOfRawData % 0x80;
+            if (rem > 0) {
+                dataHeader.SizeOfRawData += 0x80 - rem;
+                fseek(f, -sizeof(IMAGE_SECTION_HEADER), SEEK_CUR);
+                fwrite(&dataHeader, sizeof(IMAGE_SECTION_HEADER), 1, f);
+            }
+
 			dataVA = dataHeader.VirtualAddress + dataHeader.SizeOfRawData;
 			if (dataHeader.PointerToRawData != 0)
 				dataOffset = dataHeader.PointerToRawData + dataHeader.SizeOfRawData;
@@ -200,7 +214,7 @@ KitServer will NOT be installed for it.", fileName);
 		MyMessageBox("dataVA = %08x", dataVA);
 
 		if (dataOffset != 0) {
-			// at the found empty place, write the LoadLibrary address, 
+			// at the found empty place, write the LoadLibrary address,
 			// and the name of kserv.dll
 			BYTE buf[0x20], zero[0x20];
 			ZeroMemory(zero, 0x20);
@@ -222,6 +236,8 @@ KitServer will NOT be installed for it.", fileName);
 				//printf("loadLibAddr = %08x\n", loadLibAddr);
 				kservAddr = loadLibAddr + sizeof(DWORD);
 				//printf("kservAddr = %08x\n", kservAddr);
+
+				loadLibAddr = ib + loadLibAddr1;
 			}
 			else
 			{
@@ -233,7 +249,7 @@ KitServer will NOT be installed for it.", fileName);
 				ZeroMemory(buf, BUFLEN);
 				sprintf(buf, "\
 ======== INFORMATION! =========\n\
-KitServer 4 is already installed for\n\
+KitServer 4 is already installed (1) for\n\
 %s.", fileName);
 
 				MessageBox(hWnd, buf, "KitServer 4 Setup Message", 0);
@@ -247,8 +263,18 @@ KitServer 4 is already installed for\n\
 		codeVA = 0;
 
 		// find empty space at the end of .text
-		if (SeekSectionHeader(f, ".text")) {
+        bool textFound = SeekSectionHeader(f, ".text");
+        if (!textFound) textFound = SeekSectionHeader(f,"");
+		if (textFound) {
 			fread(&textHeader, sizeof(IMAGE_SECTION_HEADER), 1, f);
+
+            //adjust SizeOfRawData (needed for WE9LEK-nocd)
+            int rem = textHeader.SizeOfRawData % 0x40;
+            if (rem > 0) {
+                textHeader.SizeOfRawData += 0x40 - rem;
+                fseek(f, -sizeof(IMAGE_SECTION_HEADER), SEEK_CUR);
+                fwrite(&textHeader, sizeof(IMAGE_SECTION_HEADER), 1, f);
+            }
 
 			codeVA = textHeader.VirtualAddress + textHeader.SizeOfRawData;
 			if (textHeader.PointerToRawData != 0)
@@ -259,7 +285,9 @@ KitServer 4 is already installed for\n\
 			// shift 32 bytes back.
 			codeOffset -= 0x20;
 			codeVA -= 0x20;
-		}
+		} else {
+            MyMessageBox("section header for '.text' not found", 0);
+        }
 
 		MyMessageBox("codeOffset = %08x", codeOffset);
 		MyMessageBox("codeVA = %08x", codeVA);
@@ -296,7 +324,7 @@ KitServer 4 is already installed for\n\
 				ZeroMemory(buf, BUFLEN);
 				sprintf(buf, "\
 ======== INFORMATION! =========\n\
-KitServer 4 is already installed for\n\
+KitServer 4 is already installed (2) for\n\
 %s.", fileName);
 
 				MessageBox(hWnd, buf, "KitServer 4 Setup Message", 0);
@@ -309,6 +337,7 @@ KitServer 4 is already installed for\n\
 			fwrite(&newEntryPoint, sizeof(DWORD), 1, f);
 			//printf("New entry point: %08x\n", newEntryPoint);
 		}
+        /*
 		if (SeekCodeSectionFlags(f))
 		{
 			DWORD flags;
@@ -317,10 +346,11 @@ KitServer 4 is already installed for\n\
 			fseek(f, -sizeof(DWORD), SEEK_CUR);
 			fwrite(&flags, sizeof(DWORD), 1, f);
 		}
+        */
 		fclose(f);
 
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
-				(LPARAM)"KitServer INSTALLED");
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
+				(LPARAM)"KitServer INSTALLED correctly for this folder.\0");
 		EnableWindow(g_installButtonControl, FALSE);
 		EnableWindow(g_removeButtonControl, TRUE);
 
@@ -336,8 +366,8 @@ Setup has installed KitServer 4 for\n\
 	}
 	else
 	{
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
-				(LPARAM)"[ERROR: install failed]");
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
+				(LPARAM)"[ERROR: install failed]\0");
 		EnableWindow(g_installButtonControl, TRUE);
 		EnableWindow(g_removeButtonControl, FALSE);
 
@@ -449,7 +479,9 @@ KitServer 4 is not installed for\n\
 		codeVA = 0;
 
 		// find empty space at the end of .text
-		if (SeekSectionHeader(f, ".text")) {
+        bool textFound = SeekSectionHeader(f, ".text");
+        if (!textFound) textFound = SeekSectionHeader(f,"");
+		if (textFound) {
 			fread(&textHeader, sizeof(IMAGE_SECTION_HEADER), 1, f);
 
 			codeVA = textHeader.VirtualAddress + textHeader.SizeOfRawData;
@@ -487,6 +519,7 @@ KitServer 4 is not installed for\n\
 			fwrite(&newEntryPoint, sizeof(DWORD), 1, f);
 			//printf("New entry point: %08x\n", newEntryPoint);
 		}
+        /*
 		if (SeekCodeSectionFlags(f))
 		{
 			DWORD flags;
@@ -500,10 +533,11 @@ KitServer 4 is not installed for\n\
 			fseek(f, -sizeof(DWORD), SEEK_CUR);
 			fwrite(&flags, sizeof(DWORD), 1, f);
 		}
+        */
 		fclose(f);
 
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
-				(LPARAM)"KitServer not installed");
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
+				(LPARAM)"KitServer not installed\0");
 		EnableWindow(g_installButtonControl, TRUE);
 		EnableWindow(g_removeButtonControl, FALSE);
 
@@ -519,8 +553,8 @@ Setup has removed KitServer 4 from\n\
 	}
 	else
 	{
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
-				(LPARAM)"[ERROR: remove failed]");
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
+				(LPARAM)"[ERROR: remove failed]\0");
 		EnableWindow(g_installButtonControl, FALSE);
 		EnableWindow(g_removeButtonControl, TRUE);
 
@@ -562,7 +596,7 @@ void UpdateInfo(void)
 	// check if it's a recognizable EXE-file
 	if (GetGameVersion(fileName) == -1)
 	{
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
 				(LPARAM)"Unknown EXE-file");
 		EnableWindow(g_installButtonControl, FALSE);
 		EnableWindow(g_removeButtonControl, FALSE);
@@ -613,14 +647,14 @@ void UpdateInfo(void)
 
 			if (savedEntryPoint != 0 && lstrcmp(buf, DLL_PATH) == 0)
 			{
-				SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
+				SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
 						(LPARAM)"KitServer INSTALLED");
 				EnableWindow(g_installButtonControl, FALSE);
 				EnableWindow(g_removeButtonControl, TRUE);
 			}
 			else
 			{
-				SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
+				SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
 						(LPARAM)"KitServer not installed");
 				EnableWindow(g_installButtonControl, TRUE);
 				EnableWindow(g_removeButtonControl, FALSE);
@@ -636,7 +670,7 @@ void UpdateInfo(void)
 	}
 	else
 	{
-		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0, 
+		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
 				(LPARAM)"[ERROR: Can't open file.]");
 	}
 }
@@ -654,7 +688,7 @@ void InitControls(void)
 	lstrcpy(pattern, "..\\*.exe");
 
 	HANDLE hff = FindFirstFile(pattern, &fData);
-	if (hff == INVALID_HANDLE_VALUE) 
+	if (hff == INVALID_HANDLE_VALUE)
 	{
 		// none found.
 		g_noFiles = true;
