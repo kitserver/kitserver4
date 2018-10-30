@@ -1,5 +1,11 @@
-KitServer CHANGE LOG                                        January 30, 2018
+KitServer CHANGE LOG                                        October 30, 2018
 ============================================================================
+
+4.4.1
+-----
+- tweaked setup.exe and kserv DLL loading logic to work the same way
+as later kitservers work (for PES5 and PES6, for example). This allows
+kitserver to load correctly on modern Windows systems
 
 4.4.0
 -----

@@ -1,6 +1,6 @@
-KitServer 4                                                January 30, 2018
+KitServer 4                                                October 30, 2018
 ===========================================================================
-Version 4.4.0
+Version 4.4.1
 
 
 1. INTRODUCTION
