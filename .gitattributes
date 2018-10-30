@@ -15,6 +15,7 @@ Makefile text
 *.gif binary
 *.png binary
 *.jpg binary
+*.bmp binary
 *.dll binary
 *.lib binary
 *.exe binary
