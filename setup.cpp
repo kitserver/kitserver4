@@ -337,7 +337,6 @@ KitServer 4 is already installed (2) for\n\
 			fwrite(&newEntryPoint, sizeof(DWORD), 1, f);
 			//printf("New entry point: %08x\n", newEntryPoint);
 		}
-        /*
 		if (SeekCodeSectionFlags(f))
 		{
 			DWORD flags;
@@ -346,11 +345,10 @@ KitServer 4 is already installed (2) for\n\
 			fseek(f, -sizeof(DWORD), SEEK_CUR);
 			fwrite(&flags, sizeof(DWORD), 1, f);
 		}
-        */
 		fclose(f);
 
 		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
-				(LPARAM)"KitServer INSTALLED correctly for this folder.\0");
+				(LPARAM)"KitServer INSTALLED successfully.\0");
 		EnableWindow(g_installButtonControl, FALSE);
 		EnableWindow(g_removeButtonControl, TRUE);
 
@@ -519,7 +517,6 @@ KitServer 4 is not installed for\n\
 			fwrite(&newEntryPoint, sizeof(DWORD), 1, f);
 			//printf("New entry point: %08x\n", newEntryPoint);
 		}
-        /*
 		if (SeekCodeSectionFlags(f))
 		{
 			DWORD flags;
@@ -533,7 +530,6 @@ KitServer 4 is not installed for\n\
 			fseek(f, -sizeof(DWORD), SEEK_CUR);
 			fwrite(&flags, sizeof(DWORD), 1, f);
 		}
-        */
 		fclose(f);
 
 		SendMessage(g_exeInfoControl, WM_SETTEXT, (WPARAM)0,
