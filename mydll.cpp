@@ -127,7 +127,7 @@ DWORD codeArray[5][CODELEN] = {
 };
 
 // Data addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
-DWORD dataArray[5][DATALEN] = {
+DWORD dtaArray[5][DATALEN] = {
 	// PES4 DEMO 2
 	{ 0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
 	  0, 0, 0, 0,
@@ -160,7 +160,7 @@ DWORD dataArray[5][DATALEN] = {
 // adjust by the same difference (0x28c)
 
 DWORD code[CODELEN];
-DWORD data[DATALEN];
+DWORD dta[DATALEN];
 
 #define NUM_BALLS 2
 
@@ -266,8 +266,8 @@ float PI = 3.1415926f;
 float R = ((float)IHEIGHT)/2.0f;
 float d18 = PI/10.0f;
 float d54 = d18*3.0f;
-float y[] = { R*sin(d18), R, R*sin(d18), -R*sin(d54), -R*sin(d54), R*sin(d18), R*sin(d18) }; 
-float x[] = { R*cos(d18), 0.0f, -R*cos(d18), -R*cos(d54), R*cos(d54) };
+float y[] = { R* float(sin(d18)), R, R* float(sin(d18)), -R* float(sin(d54)), -R* float(sin(d54)), R* float(sin(d18)), R* float(sin(d18)) }; 
+float x[] = { R* float(cos(d18)), 0.0f, -R* float(cos(d18)), -R* float(cos(d54)), R* float(cos(d54)) };
 float x5 = x[4]*(y[1] - y[5])/(y[1] - y[4]);
 float x6 = -x5;
 
@@ -800,7 +800,7 @@ void DrawKitLabels(IDirect3DDevice8* dev)
 
 	WORD id = 0xffff;
 	WORD kitId = 0xffff;
-	BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+	BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 
 	// HOME PLAYER
 	ZeroMemory(buf, 255);
@@ -981,7 +981,7 @@ int GetKitSlot(int kitId)
 	int slot = -1;
 	for (int i=0; i<4; i++) 
 	{
-		WORD id = *((WORD*)(data[KIT_SLOTS] + i*0x38 + 0x0a));
+		WORD id = *((WORD*)(dta[KIT_SLOTS] + i*0x38 + 0x0a));
 		if (kitId == id) { slot = i; break; }
 	}
 	return slot;
@@ -1020,7 +1020,7 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 	if (g_triggerLoad3rdKit > 0)
 	{
 		int kitId = 0, slot = -1;
-		BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+		BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 
 		switch (g_triggerLoad3rdKit)
 		{
@@ -1031,9 +1031,9 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 				slot = GetKitSlot(kitId);
 				if (slot != -1)
 				{
-					ZeroMemory((BYTE*)data[KIT_SLOTS] + slot * 0x38, 0x38);
+					ZeroMemory((BYTE*)dta[KIT_SLOTS] + slot * 0x38, 0x38);
 					// set uni-reload flag
-					*((DWORD*)data[KIT_CHECK_TRIGGER]) = 1;
+					*((DWORD*)dta[KIT_CHECK_TRIGGER]) = 1;
 				}
 				break;
 
@@ -1044,9 +1044,9 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 				slot = GetKitSlot(kitId);
 				if (slot != -1)
 				{
-					ZeroMemory((BYTE*)data[KIT_SLOTS] + slot * 0x38, 0x38);
+					ZeroMemory((BYTE*)dta[KIT_SLOTS] + slot * 0x38, 0x38);
 					// set uni-reload flag
-					*((DWORD*)data[KIT_CHECK_TRIGGER]) = 1;
+					*((DWORD*)dta[KIT_CHECK_TRIGGER]) = 1;
 				}
 				break;
 		}
@@ -1279,7 +1279,7 @@ void InitKserv()
 	AFSITEMINFO itemInfo[256*5]; // each team has 5 kit-files.
 	ZeroMemory(itemInfo, sizeof(AFSITEMINFO) * 5 * 256);
 
-	g_numTeams = data[NUMTEAMS];
+	g_numTeams = dta[NUMTEAMS];
 
 	Log("Calculating kit offsets");
 	DWORD result = GetKitInfo(g_afsFileName, itemInfo, g_numTeams * 5);
@@ -1321,7 +1321,8 @@ void InitKserv()
 
 	// Determine ball model offsets
 	Log("Calculating ball model offsets");
-	for (int b=0; b<BALL_MDLS_COUNT; b++)
+	int b;
+	for (b=0; b<BALL_MDLS_COUNT; b++)
 	{
 		ZeroMemory(&g_ballMdls[b], sizeof(AFSITEMINFO));
 		result = GetItemInfo(g_afsFileName, ballMdls[b], &g_ballMdls[b], &base);
@@ -1664,7 +1665,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 // returns TRUE if specified slot contains edited kit.
 BOOL IsEditedKit(int slot) 
 {
-	KitSlot* kitSlot = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + slot*sizeof(KitSlot));
+	KitSlot* kitSlot = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + slot*sizeof(KitSlot));
 	return kitSlot->isEdited;
 }
 
@@ -1690,7 +1691,7 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 					g_triggerLoad3rdKit = 1;
 
 					// pick next extra kit
-					BYTE strip = ((BYTE*)data[TEAM_STRIPS])[0];
+					BYTE strip = ((BYTE*)dta[TEAM_STRIPS])[0];
 					int kitId = (strip & 0x01) ? g_currTeams[0] * 5 + 3 : g_currTeams[0] * 5 + 2;
 					g_kitExtras[kitId] = (g_kitExtras[kitId] == NULL) ? 
 						kDB->players[g_currTeams[0]].extra : g_kitExtras[kitId]->next;
@@ -1700,7 +1701,7 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 					g_triggerLoad3rdKit = 2;
 
 					// pick next extra kit
-					BYTE strip = ((BYTE*)data[TEAM_STRIPS])[1];
+					BYTE strip = ((BYTE*)dta[TEAM_STRIPS])[1];
 					int kitId = (strip & 0x01) ? g_currTeams[1] * 5 + 3 : g_currTeams[1] * 5 + 2;
 					g_kitExtras[kitId] = (g_kitExtras[kitId] == NULL) ? 
 						kDB->players[g_currTeams[1]].extra : g_kitExtras[kitId]->next;
@@ -2180,7 +2181,8 @@ void ApplyBallTexture(BYTE* orgBall, BYTE* ballTex)
 BOOL SignExists(DWORD sig, char* filename)
 {
 	int k = -1;
-	for (int i=0; i<8; i++)
+	int i;
+	for (i=0; i<8; i++)
 		if (sig == g_sign[i]) { k = i; break; }
 
 	if (k == -1) return FALSE; // not found
@@ -2229,8 +2231,8 @@ UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool, IDirect3DTexture8** pp
     if (!_internalResSet) {
         _internalResSet = true;
         if (g_config.internalResolutionWidth > 0 && g_config.internalResolutionHeight > 0) {
-            DWORD *w = (DWORD*)data[INTRES_WIDTH];
-            DWORD *h = (DWORD*)data[INTRES_HEIGHT];
+            DWORD *w = (DWORD*)dta[INTRES_WIDTH];
+            DWORD *h = (DWORD*)dta[INTRES_HEIGHT];
             if (w != NULL && h != NULL) {
                 *w = g_config.internalResolutionWidth;
                 *h = g_config.internalResolutionHeight;
@@ -2442,7 +2444,7 @@ DWORD STDMETHODCALLTYPE JuceSetFilePointer(HANDLE handle, LONG offset, PLONG upp
 	if (g_device == NULL)
 	{
 		// try to hook device methods
-		DWORD* pdev = (DWORD*)(*((DWORD*)data[IDIRECT3DDEVICE8]));
+		DWORD* pdev = (DWORD*)(*((DWORD*)dta[IDIRECT3DDEVICE8]));
 		if (pdev != 0)
 		{
 			g_device = (IDirect3DDevice8*)pdev;
@@ -2683,8 +2685,8 @@ DWORD JuceResetFlags(DWORD index)
 	DWORD result = ResetFlags(index);
 
 	// clear out the slots
-	ZeroMemory((BYTE*)data[KIT_SLOTS], 0x38 * 4);
-	ZeroMemory((BYTE*)data[ANOTHER_KIT_SLOTS], sizeof(KitSlot) * 4);
+	ZeroMemory((BYTE*)dta[KIT_SLOTS], 0x38 * 4);
+	ZeroMemory((BYTE*)dta[ANOTHER_KIT_SLOTS], sizeof(KitSlot) * 4);
 
 	return result;
 }
@@ -2734,13 +2736,13 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 {
     if (!_aspectRatioSet) {
         // adjust aspect ratio
-        if (data[PROJ_W] && data[CULL_W] && g_config.aspectRatio >0.0f) {
+        if (dta[PROJ_W] && dta[CULL_W] && g_config.aspectRatio >0.0f) {
             LogWithDouble("Setting aspect-ratio: %0.4f", 
                     (double)g_config.aspectRatio);
             float factor = g_config.aspectRatio / (512.0/384.0);
 
             DWORD newProtection = PAGE_EXECUTE_READWRITE;
-            float* ar_p = (float*)data[PROJ_W];
+            float* ar_p = (float*)dta[PROJ_W];
             if (VirtualProtect(ar_p,4,newProtection,&g_savedProtection)) {
                 *ar_p = 512.0*factor;
                 LogWithDouble("PROJECTION_W: %0.2f", (double)*ar_p);
@@ -2748,7 +2750,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
             else {
                 Log("FAILED to change aspect-ratio (PROJECTION)");
             }
-            DWORD* ar_c = (DWORD*)data[CULL_W];
+            DWORD* ar_c = (DWORD*)dta[CULL_W];
             if (VirtualProtect(ar_c,4,newProtection,&g_savedProtection)) {
                 *ar_c = (int)(512*factor)+1;
                 LogWithNumber("CULLING_W: %d", *ar_c);
@@ -2783,7 +2785,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 	// find corresponding file
 	char fileClue[BUFLEN];
 	ZeroMemory(fileClue, BUFLEN);
-	WORD* teams = (WORD*)data[TEAM_IDS];
+	WORD* teams = (WORD*)dta[TEAM_IDS];
 
 	BOOL found = FALSE;
 	g_isBibs = FALSE;
@@ -2901,7 +2903,7 @@ void Initialize(int v)
 {
 	// select correct addresses
 	memcpy(code, codeArray[v], sizeof(code));
-	memcpy(data, dataArray[v], sizeof(data));
+	memcpy(dta, dtaArray[v], sizeof(dta));
 
 	// assign pointers
 	UniDecrypt = (UNIDECRYPT)code[C_UNIDECRYPT];
@@ -2980,9 +2982,10 @@ HRESULT SaveAs8bitBMP(char* filename, BYTE* buf, BYTE* pal, LONG width, LONG hei
 		WriteFile(hFile, &infoheader, sizeof(infoheader), (LPDWORD)&wbytes, NULL);
 
 		// write palette
+		int i;
 		for (int bank=0; bank<8; bank++)
 		{
-			for (int i=0; i<8; i++)
+			for (i=0; i<8; i++)
 			{
 				WriteFile(hFile, pal + bank*32*4 + i*4 + 2, 1, (LPDWORD)&wbytes, NULL);
 				WriteFile(hFile, pal + bank*32*4 + i*4 + 1, 1, (LPDWORD)&wbytes, NULL);
@@ -3319,7 +3322,7 @@ TeamAttr* utilGetTeamAttr(WORD id)
 	if (id < 0 || id > 255)
 		return NULL;
 
-	DWORD teamAttrBase = *((DWORD*)data[TEAM_COLLARS_PTR]);
+	DWORD teamAttrBase = *((DWORD*)dta[TEAM_COLLARS_PTR]);
 	return (TeamAttr*)(teamAttrBase + id*sizeof(TeamAttr));
 }
 
@@ -3362,7 +3365,8 @@ DWORD JuceCommonSetKitAttributes(DWORD n, BOOL useN)
 
 	// save the team attributes here
 	TeamAttr saveTeamAttr[2];
-	for (int k=0; k<2; k++) {
+	int k;
+	for (k=0; k<2; k++) {
 		BOOL customTeam = IS_CUSTOM_TEAM(g_currTeams[k]);
 		if (customTeam)
 			continue;
@@ -3434,11 +3438,11 @@ DWORD JuceCommonSetKitAttributes(DWORD n, BOOL useN)
 	if (!customTeam)
 	{
 		// PLAYER
-		BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+		BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 		WORD kitId = g_currTeams[index] * 5 + ((strips[index] & 0x01) != 0) + 2;
 		Kit* kit = utilGetKit(kitId);
 
-		KitSlot* kitSlots = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + index*sizeof(KitSlot)*2);
+		KitSlot* kitSlots = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + index*sizeof(KitSlot)*2);
 
 		if (kit != NULL && !kitSlots[1].isEdited)
 		{
@@ -3507,13 +3511,13 @@ DWORD JuceFinalSetKitAttributes(DWORD n)
 		int takenSlots[2] = {-1, -1};
 		for (int i=0; i<2; i++)
 		{
-			KitSlot* kitSlot = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + i*2*sizeof(KitSlot) + sizeof(KitSlot));
+			KitSlot* kitSlot = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + i*2*sizeof(KitSlot) + sizeof(KitSlot));
 			takenSlots[i] = GetKitSlot(kitSlot->kitId);
 		}
 		for (int k=0; k<4; k++)
 		{
 			if (k == takenSlots[0] || k == takenSlots[1]) continue;
-			ZeroMemory((BYTE*)data[KIT_SLOTS] + k * 0x38, 0x38);
+			ZeroMemory((BYTE*)dta[KIT_SLOTS] + k * 0x38, 0x38);
 			TRACE2("JuceFinalSetKitAttributes: slot #%d cleared.", k);
 		}
 		TRACE("JuceFinalSetKitAttributes: unused slots cleared.");
@@ -3587,7 +3591,7 @@ DWORD JuceEditModeSetKitAttributes(DWORD n)
 void VerifyTeams()
 {
 	g_currTeams[0] = g_currTeams[1] = 0xffff;
-	WORD* teams = (WORD*)data[TEAM_IDS];
+	WORD* teams = (WORD*)dta[TEAM_IDS];
 
 	// try to define both teams.
 	if (teams[0] >=0 && teams[0] <= g_numTeams) g_currTeams[0] = teams[0];
@@ -3599,7 +3603,7 @@ void VerifyTeams()
 		int which = (teams[0] == 0x0122) ? 1 : 0;
 
 		// looks like it's an ML team.
-		DWORD* mlPtrs = (DWORD*)data[MLDATA_PTRS];
+		DWORD* mlPtrs = (DWORD*)dta[MLDATA_PTRS];
 		if (mlPtrs[which] != NULL)
 		{
 			WORD* mlData = (WORD*)(mlPtrs[which] + 0x278);
@@ -3615,7 +3619,7 @@ void VerifyTeams()
 		int which = (teams[1] == 0x0122) ? 1 : 0;
 
 		// looks like it's an ML team.
-		DWORD* mlPtrs = (DWORD*)data[MLDATA_PTRS];
+		DWORD* mlPtrs = (DWORD*)dta[MLDATA_PTRS];
 		if (mlPtrs[which] != NULL)
 		{
 			WORD* mlData = (WORD*)(mlPtrs[which] + 0x278);

@@ -1,12 +1,38 @@
 CC=cl
-CFLAGS=/nologo /GX $(EXTRA_CFLAGS)
 LINK=link
-LFLAGS=/NOLOGO /NODEFAULTLIB:libci.lib
+RC=rc
+
+CFLAGS=/nologo /MT /EHsc /wd4731 /wd4477 /D_WINNT_WIN32=0x501 /DKS_JMP_SHIFT=4 $(EXTRA_CFLAGS) /DUSE_HASHMAPS /D_WIN32
+LFLAGS=/NOLOGO /NODEFAULTLIB:libci.lib /LIBPATH:soft\dxsdk81\lib
 LIBS=user32.lib gdi32.lib advapi32.lib
 
-all: kserv.dll kctrl.exe setup.exe afstest.exe afswalk.exe
-release:
-	$(MAKE) EXTRA_CFLAGS=/DMYDLL_RELEASE_BUILD
+
+INCLUDE=$(INCLUDE);soft\dxsdk81\include
+LIB=$(LIB);soft\dxsdk81\lib
+
+
+all: dlls apps
+	if exist output (rd /S /Q output)
+	mkdir output
+	copy *.exe output
+	copy *.dll output
+	
+all_apps: apps
+	if exist output (rd /S /Q output)
+	mkdir output
+	copy *.exe output
+
+dlls: kserv.dll
+apps: kctrl.exe setup.exe afstest.exe afswalk.exe
+
+
+!if "$(debug)"=="1"
+EXTRA_CFLAGS=/DDEBUG
+!else
+EXTRA_CFLAGS=/DMYDLL_RELEASE_BUILD
+!endif
+	
+	
 setup: setup.exe
 afstest: afstest.exe
 afswalk: afswalk.exe
@@ -25,12 +51,12 @@ apihijack.obj: apihijack.cpp apihijack.h
 
 kserv.lib: mydll.obj detect.obj kdb.obj log.obj config.obj imageutil.obj d3dfont.obj dxutil.obj crc32.obj afsreader.obj apihijack.obj
 kserv.dll: kserv.lib mydll.res
-	$(LINK) $(LFLAGS) /out:kserv.dll /DLL mydll.obj detect.obj kdb.obj log.obj config.obj crc32.obj afsreader.obj imageutil.obj d3dfont.obj dxutil.obj apihijack.obj mydll.res $(LIBS) d3dx8.lib winmm.lib /LIBPATH:\DXSDK\lib
+	$(LINK) $(LFLAGS) /out:kserv.dll /DLL mydll.obj detect.obj kdb.obj log.obj config.obj crc32.obj afsreader.obj imageutil.obj d3dfont.obj dxutil.obj apihijack.obj mydll.res $(LIBS) d3dx8.lib winmm.lib /LIBPATH:/LIBPATH:\DXSDK\lib
 mydll.obj: mydll.cpp mydll.h shared.h config.h kdb.h
 detect.obj: detect.cpp
 
 mydll.res: 
-	rc -r -fo mydll.res mydll.rc
+	$(RC)  -r -fo mydll.res mydll.rc
 
 kctrl.exe: kctrl.obj config.obj log.obj win32gui.obj
 	$(LINK) $(LFLAGS) /out:kctrl.exe kctrl.obj config.obj log.obj win32gui.obj $(LIBS)
