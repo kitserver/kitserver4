@@ -1,0 +1,107 @@
+<!-- PES4 Stylesheet designed by Ajay January 2005 -->
+<!--     colours used      -->
+<!-- dark green  	003333 -->
+<!-- light green	336666 -->
+<!-- links green   	66ffff -->
+<!-- text green   	99cc99 -->
+
+<!-- scrollbal attributes -->
+body{margin:0 0 0 0;background:#336666;
+	SCROLLBAR-FACE-COLOR: #003333; SCROLLBAR-HIGHLIGHT-COLOR: #336666; SCROLLBAR-SHADOW-COLOR: #336666; SCROLLBAR-3DLIGHT-COLOR: #003333; SCROLLBAR-ARROW-COLOR: #336666; SCROLLBAR-TRACK-COLOR: #336666; SCROLLBAR-DARKSHADOW-COLOR: #003333
+}
+<!-- links attributes -->
+td,div{font:12px Tahoma,Verdana,Arial;color:#99cc99}
+a:link{color:#66ffff}
+a:hover{color:#99cc99}
+a:active{color:#99cc99}
+a:visited{color:#66ffff}
+ <!-- heading attributes -->
+h1{
+border-bottom:1px solid #003333;
+color:#003333;
+font:bold 19px Tahoma,Arial,Verdana
+}
+h2{
+border-bottom:1px solid #003333;
+color:#003333;
+font:bold 17px Tahoma,Arial,Verdana
+}
+h3{
+color:#003333;
+font:bold 15px Tahoma,Arial,Verdana
+}
+h4{
+color:#003333;
+font:bold 13px Tahoma,Arial,Verdana
+}
+<!-- paragraph attributes -->
+p{margin:10px 0 0 0;line-height:145%}
+.header{
+background:#003333
+}
+<!-- latest news title and date attributes -->
+font.headline {
+	FONT-WEIGHT: bold; FONT-SIZE: 16px; COLOR: #003333; FONT-FAMILY: Tahoma,Arial,Verdana
+}
+font.date {
+	FONT-WEIGHT: normal; FONT-SIZE: 10px; COLOR: #66ffff; FONT-FAMILY: Tahoma,Arial,Verdana
+}
+<!-- horizontal rule attributes -->
+hr{
+color:#003333;
+height:1px
+}
+<!-- navigation attributes --> 
+.menu{border-left:1px solid #003333}
+p.menublock{margin:3px 0 0 0}
+.menublock a{
+padding:1px 1px 1px 1px;
+width:100%;
+display:block;
+color:#336666;
+background:#003333;
+font-weight:bold;
+text-decoration:none
+}
+.menublock a:hover{
+color:#336666;
+background:#99cc99;
+text-decoration:none
+}
+.mheadtitle {
+padding:0px 0px 0px 0px;
+width:100%;
+display:block;
+color:#003333;
+background:#336666;
+font-weight:bold;
+text-decoration:none
+}
+<!-- general attributes -->
+.menublock a:visited{color:#336666}
+.content{color:#99cc99;background:#336666}
+.footer{background:#003333;color:#66ffff}
+.footer a:link,.footer a:hover,.footer a:visited,.footer a:active{color:#66ffff}
+.imgborder{border:3px solid #336666}
+.disclaimer {background:#003333;color:#336666}
+/*
+     FILE ARCHIVED ON 02:31:33 Jan 05, 2006 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 07:30:32 Oct 11, 2021.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 204.824
+  exclusion.robots: 0.083
+  exclusion.robots.policy: 0.076
+  RedisCDXSource: 1.479
+  esindex: 0.006
+  LoadShardBlock: 184.106 (3)
+  PetaboxLoader3.datanode: 250.234 (4)
+  CDXLines.iter: 17.179 (3)
+  load_resource: 180.089
+  PetaboxLoader3.resolve: 46.84
+*/

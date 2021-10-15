@@ -1,0 +1,129 @@
+KitServer CHANGE LOG                                        October 30, 2018
+============================================================================
+
+4.4.1
+-----
+- tweaked setup.exe and kserv DLL loading logic to work the same way
+as later kitservers work (for PES5 and PES6, for example). This allows
+kitserver to load correctly on modern Windows systems
+
+4.4.0
+-----
+- support for fullscreen and internal resolution
+
+4.3.11
+------
+- added explicit aspect-ratio setting (in kserv.cfg)
+- game speed control option (in kserv.cfg)
+
+4.3.10
+------
+- support for compressed WE8.exe
+- fixed bug when GK kit wasn't always loading in PES4 Demo, Demo2
+
+4.3.9
+-----
+- fixed ball selector bug, which was introduced in 4.3.8 release.
+
+4.3.8
+-----
+Mostly a bug-fix release, but some small new features included as well.
+- fixed the "handless-keeper" bug.
+- fixed the problems when kit model/collar/collars were not correctly set
+in edit mode or after using "Play again with different teams" option.
+- kitserver now recognizes edited kits (altered in Edit Mode) and treats
+them properly - that is: not trying to do anything with them.
+
+New feature: goalkeeper gloves in BMP format ("gloves.bmp").
+New feature: support for alpha channel for colors (You can now specify
+transparent or semi-transparent colors for name/number on shirt/shorts)
+New feature: additonal attributes to specify on per-kit basis:
+- the cuff-type for shirts
+- location of number on shorts (off, left, right, both)
+- number type (0-4)
+- name type (0-1)
+- name shape (straignt, curved)
+
+4.3.2
+-----
+Bug-fix release.
+- Kitserver doesn't cause the game crash anymore, if an "Original" ML team 
+is used in Master League Mode (or Exhibition Mode).
+- Team identification algorithm reworked. Now more simple and stable.
+
+4.3.1
+-----
+New hot-key: for going backwards in extra balls list.
+Bug-fix: balls with BMP-textures are now properly rendered at all times
+(before, it is was only rendered correctly for one match, and messed up in
+the next match)
+
+4.3.0
+-----
+Added support for WE8:I PC.
+New feature: ball selector
+- Fixed a bug in ML vs. ML exhibition game, when extra kit selection was 
+getting confused and mixing up the teams.
+
+4.2.1
+-----
+- Fixed the problem with pressing Alt-Tab (context switching). The game
+doesn't crash anymore when you temporarily switch to some other application,
+and then go back to PES4.
+
+4.2.0
+-----
+Main new feature: support for "3rd" (extra) kits.
+Players and goalkeepers can have unlimited number of extra kits configured.
+Also, for "default" and "3rd" kits, the following is now possible:
+- set colors (shirt name, number, shorts number)
+- set collar (yes/no)
+- set shirt 3D-model
+Change in setup.exe: manual selection of OS is disabled by default.
+To enable, use "-os" command-line parameter.
+
+4.1.7
+-----
+- Better error diagnostics and logging.
+
+4.1.6
+-----
+- Texture boost re-implemented using slightly different method.
+- Problems with kits in Training mode (a.k.a. "Regulate Condition") fixed.
+
+4.1.5
+-----
+Bug-fixing release.
+- Kits from KDB now work correctly for the P1 Master League team.
+- Texture boost can now also be applied to non-KDB kits (from AFS). 
+The configuration parameter: "kit.useLargeTexture" now takes 3 diff. values:
+0 - no boost, 1 - only KDB kits boosted, 2 - all kits boosted.
+- Fixed a bug when sometimes (at random moments) a kit from KDB wouldn't 
+replace AFS kit, even though it should have.
+- Kitserver's setup.exe now offers a manual selection for operating system.
+Auto-detect mode is still available, and should work fine in 99.9% of cases.
+However, if you experience a problem with early game crash, try the
+manual selection. (Explained in more details in REAMDE.txt).
+
+4.1.4
+-----
+"Texture boost" feature introduced.
+When this feature is enabled (which it is by default), the KitServer forces
+the game to use larger kit texture for near and medium distance from camera
+to the player. This fixes the problem, observed by many, that kits from KDB
+looked good only when camera was very close to the player.
+
+Early testing showed no performance hit, when using texture boost. But, 
+if you notice that your game runs slower with this feature enabled, or you
+simply don't like how the kits look, you can turn texture boost off:
+Open kserv.cfg file (it's just a text file: you can use Notepad, or any 
+text editor), change "kit.useLargeTexture" value to 0, and restart the
+game.
+
+4.1.1
+-----
+First public version that actually works with demo (70MB, 200MB)
+and the full game (1.0, 1.10)
+
+
+
