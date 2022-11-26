@@ -69,9 +69,11 @@ bool _internalResSet = false;
 bool g_fontInitialized = false;
 CD3DFont* g_font = NULL;
 
-extern char* GAME[6];
-extern char* GAME_GUID[5];
-extern DWORD GAME_GUID_OFFSETS[5];
+#define NUM_GUIDS 6
+
+extern char* GAME[NUM_GUIDS + 1];
+extern char* GAME_GUID[NUM_GUIDS];
+extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
 
 #define CODELEN 23
 #define DATALEN 13
@@ -93,17 +95,9 @@ enum {
 	C_RESETFLAGS, C_RESETFLAGS_CS,
 };
 
-// data array names
-enum {
-	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
-	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
-	KIT_CHECK_TRIGGER,
-    PROJ_W, CULL_W,
-    INTRES_WIDTH, INTRES_HEIGHT,
-};
 
 // Code addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
-DWORD codeArray[5][CODELEN] = { 
+DWORD codeArray[NUM_GUIDS][CODELEN] = { 
 	// PES4 DEMO 2
 	{ 0x72f520, 0x6d29ba, 0x6d2a1c, 0x4a2c20, 0x6d29b4, 0x418116, 0, 0, 0,
 	  0, 0, 0, 0, 0, 0, 0, 0,
@@ -124,10 +118,36 @@ DWORD codeArray[5][CODELEN] = {
 	{ 0x92b470, 0x8cef0a, 0x8cef6c, 0, 0, 0x41d7e6, 0x92b430, 0x690cab, 0x672490,
 	  0x982783, 0x98278a, 0x5fee8e, 0x5feecc, 0x48e9eb, 0x48e9f1, 0x93b4c6, 0x93b4cd,
 	  0x5f38d0, 0x5fe07a, 0x690690, 0x690c99, 0x5fbb20, 0x60b228},
+	
+	// WE8IK
+	{
+		0x6cace0, 0x678022, 0x67806c, 
+		0, 0, 0x41eb16,
+		0x6caca0, 0x43bd2b, 0x8b5ab0,
+		0x950e63, 0x950e6a,
+		0x84268e, 0x8426cc,
+		0x7082eb, 0x7082f1,
+		0x909a26, 0x909a2d,
+		
+		0x837070, 0x84187a,
+		0x43b710, 0x43bd19,
+		0x83f320, 0x84e9e8,
+	},
+
 };
 
+// data array names
+enum {
+	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
+	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
+	KIT_CHECK_TRIGGER,
+    PROJ_W, CULL_W,
+    INTRES_WIDTH, INTRES_HEIGHT,
+};
+
+
 // Data addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
-DWORD dtaArray[5][DATALEN] = {
+DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 	// PES4 DEMO 2
 	{ 0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
 	  0, 0, 0, 0,
@@ -153,6 +173,13 @@ DWORD dtaArray[5][DATALEN] = {
 	  0x4def780, 0xa060bc, 0x4e43864, 0x22fb648,
       0x23814d8, 0x23814b4,
       0x215dd20, 0x215dd24},
+	// WE8I K
+	{ 0x4c4f3a0, 0x4c50342, 0x214f678, 205, 0x20fdd10,
+	  0x4bfdc40, 0x9e514c, 0x4c51d44, 0x22ec150,
+      0x214f928, 0x214f904,
+      0x2154318, 0x215431c},
+
+
 };
 
 // NOTE: when looking for mirror address of 0x4c90c98 (PES4 1.10),
@@ -2889,7 +2916,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 int GetGameVersion(void)
 {
 	HMODULE hMod = GetModuleHandle(NULL);
-	for (int i=0; i<5; i++)
+	for (int i=0; i<NUM_GUIDS; i++)
 	{
 		char* guid = (char*)((DWORD)hMod + GAME_GUID_OFFSETS[i]);
 		if (strncmp(guid, GAME_GUID[i], lstrlen(GAME_GUID[i]))==0)
