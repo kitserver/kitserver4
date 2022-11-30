@@ -56,6 +56,7 @@ KSERV_CONFIG g_config = {
     DEFAULT_INTRES_HEIGHT,
     DEFAULT_FULLSCREEN_WIDTH,
     DEFAULT_FULLSCREEN_HEIGHT,
+	DEFAULT_RESERVED_MEMORY,
 };
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
@@ -75,7 +76,7 @@ extern char* GAME[NUM_GUIDS + 1];
 extern char* GAME_GUID[NUM_GUIDS];
 extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
 
-#define CODELEN 23
+#define CODELEN 26
 #define DATALEN 13
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
@@ -93,6 +94,7 @@ enum {
 	C_FINISHKITPICK, C_FINISHKITPICK_CS,
 	C_ALLOCMEM, C_ALLOCMEM_CS,
 	C_RESETFLAGS, C_RESETFLAGS_CS,
+	C_RESMEM1, C_RESMEM2, C_RESMEM3,
 };
 
 
@@ -110,6 +112,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0, 0, 
 		0, 0, 
 		0x45d580, 0x4748f4,
+		0, 0, 0,
 	},
 	// PES4 DEMO
 	{
@@ -123,6 +126,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0, 0, 
 		0, 0, 
 		0x45d6a0, 0x47a414,
+		0, 0, 0,
 	},
 	// PES4 1.10
 	{ 
@@ -136,6 +140,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0x5f30c0, 0x5fd87a, 
 		0x68ff50, 0x690589, 
 		0x5fb320, 0x60a9f8,
+		0x8c5f9d, 0x8c5fb2, 0x8c5fc9,
 	},
 	// PES4 1.0
 	{ 
@@ -149,6 +154,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0x5f2ec0, 0x5fd67a, 
 		0x68fce0, 0x6902e9, 
 		0x5fb120, 0x60a7b8,
+		0x8c55dd, 0x8c55f2, 0x8c5609,
 	},
 	// WE8I US
 	{ 
@@ -162,6 +168,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0x5f38d0, 0x5fe07a, 
 		0x690690, 0x690c99, 
 		0x5fbb20, 0x60b228,
+		0x8c700d, 0x8c7022, 0x8c7039,
 	},
 	
 	// WE8IK
@@ -176,6 +183,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 		0x837070, 0x84187a,
 		0x43b710, 0x43bd19,
 		0x83f320, 0x84e9e8,
+		0x8c9ced, 0x8c9d02, 0x8c9d19,
 	},
 
 };
@@ -303,7 +311,7 @@ WORD g_currTeams[2] = {0xffff, 0xffff};
 KitEntry* g_kitExtras[0x500];
 
 //////////////////////////////////////
-/*
+
 #define BALL_MDLS_COUNT 9
 #define BALL_TEXS_COUNT 7
 
@@ -316,22 +324,27 @@ char* ballTexs[] = {
 	"ball00tex.bin", "ball02tex.bin", "ball08tex.bin",
 	"ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin",
 };
-*/
-#define BALL_MDLS_COUNT 10
-#define BALL_TEXS_COUNT 9
 
-char* ballMdls[] = { 
+#define BALL_MDLS_COUNT_2 10
+#define BALL_TEXS_COUNT_2 9
+
+char* ballMdls_2[] = { 
     "ball00mdl.bin", "ball02mdl.bin", "ball08mdl.bin",
     "ball09mdl.bin", "ball10mdl.bin", "ball14mdl.bin", "ball15mdl.bin", "ball17mdl.bin", "ball18mdl.bin",
-    "ball_mdl.bin"
+    "ball_mdl.bin",
 };
-char* ballTexs[] = {
+char* ballTexs_2[] = {
     "ball00tex.bin", "ball02tex.bin", "ball08tex.bin",
-    "ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin", "ball17tex.bin", "ball18tex.bin"
+    "ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin", "ball17tex.bin", "ball18tex.bin",
 };
+
 
 AFSITEMINFO g_ballMdls[BALL_MDLS_COUNT];
 AFSITEMINFO g_ballTexs[BALL_TEXS_COUNT];
+
+AFSITEMINFO g_ballMdls_2[BALL_MDLS_COUNT_2];
+AFSITEMINFO g_ballTexs_2[BALL_TEXS_COUNT_2];
+
 
 BYTE* g_ballMdl = NULL;
 BYTE* g_ballTex = NULL;
@@ -541,6 +554,7 @@ int GetGameVersion(void);
 void Initialize(int v);
 void ResetCyclesAndBuffers2(void);
 void LoadKDB();
+void FixReservedMemory(void);
 HRESULT SaveAs8bitBMP(char*, BYTE*);
 HRESULT SaveAs8bitBMP(char*, BYTE*, BYTE*, LONG, LONG);
 HRESULT SaveAsBMP(char*, BYTE*, SIZE_T, LONG, LONG, int);
@@ -1436,31 +1450,59 @@ void InitKserv()
 
 	// set flag
 	g_teamOffsetsLoaded = TRUE;
-
-	// Determine ball model offsets
-	Log("Calculating ball model offsets");
+	int ver = GetGameVersion();
 	int b;
-	for (b=0; b<BALL_MDLS_COUNT; b++)
+	if (ver == 5) //WE8IK
 	{
-		ZeroMemory(&g_ballMdls[b], sizeof(AFSITEMINFO));
-		result = GetItemInfo(g_afsFileName, ballMdls[b], &g_ballMdls[b], &base);
-		if (result != AFS_OK)
-			LogWithString("ERROR: %s", GetAfsErrorText(result));
-		TRACE2("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
-		LogWithNumber("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+		// Determine ball model offsets
+		Log("Calculating ball model offsets");
+		for (b=0; b<BALL_MDLS_COUNT_2; b++)
+		{
+			ZeroMemory(&g_ballMdls_2[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballMdls_2[b], &g_ballMdls_2[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball model offset is: %08x", g_ballMdls_2[b].dwOffset); 
+			LogWithNumber("ball model offset is: %08x", g_ballMdls_2[b].dwOffset); 
+		}
+		// Determine ball texture offsets
+		Log("Calculating ball texture offsets");
+		for (b=0; b<BALL_TEXS_COUNT_2; b++)
+		{
+			ZeroMemory(&g_ballTexs_2[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballTexs_2[b], &g_ballTexs_2[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball texture offset is: %08x", g_ballTexs_2[b].dwOffset); 
+			LogWithNumber("ball texture offset is: %08x", g_ballTexs_2[b].dwOffset); 
+		}
+
+	}
+	else
+	{
+		for (b=0; b<BALL_MDLS_COUNT; b++)
+		{
+			ZeroMemory(&g_ballMdls[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballMdls[b], &g_ballMdls[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+			LogWithNumber("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+		}
+		// Determine ball texture offsets
+		Log("Calculating ball texture offsets");
+		for (b=0; b<BALL_TEXS_COUNT; b++)
+		{
+			ZeroMemory(&g_ballTexs[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballTexs[b], &g_ballTexs[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
+			LogWithNumber("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
+		}
+
 	}
 
-	// Determine ball texture offsets
-	Log("Calculating ball texture offsets");
-	for (b=0; b<BALL_TEXS_COUNT; b++)
-	{
-		ZeroMemory(&g_ballTexs[b], sizeof(AFSITEMINFO));
-		result = GetItemInfo(g_afsFileName, ballTexs[b], &g_ballTexs[b], &base);
-		if (result != AFS_OK)
-			LogWithString("ERROR: %s", GetAfsErrorText(result));
-		TRACE2("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
-		LogWithNumber("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
-	}
 
 	Log("Calculating etc_ee_tex.bin offset");
 	ZeroMemory(&g_etcEeTex, sizeof(AFSITEMINFO));
@@ -1487,6 +1529,7 @@ void InitKserv()
        HookAPICalls( &Kernel32Hook );
     }
     LogWithDouble("game.speed = %0.2f", (double)g_config.gameSpeed);
+	FixReservedMemory();
 }
 
 BOOL WINAPI Override_QueryPerformanceFrequency(
@@ -2692,8 +2735,17 @@ DWORD JuceUniDecrypt(DWORD addr, DWORD size)
 // helper function
 BOOL IsBallModelOffset(DWORD offset)
 {
-	for (int i=0; i<BALL_MDLS_COUNT; i++)
-		if (g_ballMdls[i].dwOffset == offset) return true;
+	int v = GetGameVersion();
+	if (v ==5)
+	{
+		for (int i=0; i<BALL_MDLS_COUNT_2; i++)
+			if (g_ballMdls_2[i].dwOffset == offset) return true;
+	}
+	else
+	{
+		for (int i=0; i<BALL_MDLS_COUNT; i++)
+			if (g_ballMdls[i].dwOffset == offset) return true;
+	}
 
 	return false;
 }
@@ -2701,8 +2753,18 @@ BOOL IsBallModelOffset(DWORD offset)
 // helper function
 BOOL IsBallTextureOffset(DWORD offset)
 {
+	int v = GetGameVersion();
+	if (v ==5)
+	{
+		for (int i=0; i<BALL_TEXS_COUNT_2; i++)
+			if (g_ballTexs_2[i].dwOffset == offset) return true;
+
+	}
+	else
+	{
 	for (int i=0; i<BALL_TEXS_COUNT; i++)
 		if (g_ballTexs[i].dwOffset == offset) return true;
+	}
 
 	return false;
 }
@@ -3765,3 +3827,33 @@ void VerifyTeams()
 	}
 }
 
+
+// This function will enforce reserved memory of the game
+// Will allow to use better textures quality
+void FixReservedMemory()
+{
+    DWORD protection;
+    DWORD newProtection = PAGE_EXECUTE_READWRITE;
+
+    // increase Reserved memory
+    if (g_config.newResMem > 0) {
+        if (code[C_RESMEM1] && code[C_RESMEM2] && code[C_RESMEM3]) {
+            DWORD *c1 = (DWORD*)code[C_RESMEM1];
+            DWORD *c2 = (DWORD*)code[C_RESMEM2];
+            DWORD *c3 = (DWORD*)code[C_RESMEM3];
+            if (VirtualProtect(c1-8, 0x100, newProtection, &protection)) {
+                DWORD currMem = *c1;
+                LogWithNumber("Reserved memory was: %d bytes", *c1);
+                if (*c1 < g_config.newResMem) {
+                    *c1 = g_config.newResMem;
+                    *c2 = g_config.newResMem >> 2;
+                    *c3 = g_config.newResMem;
+                }
+                LogWithNumber("Reserved memory now: %d bytes", *c1);
+            }
+            else {
+                Log("Unable to increase reserved memory: VirtualProtect failed");
+            }
+        }
+    }
+}

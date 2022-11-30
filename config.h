@@ -24,6 +24,7 @@
 #define DEFAULT_INTRES_HEIGHT 0
 #define DEFAULT_FULLSCREEN_WIDTH 0
 #define DEFAULT_FULLSCREEN_HEIGHT 0
+#define DEFAULT_RESERVED_MEMORY 0
 
 typedef struct _KSERV_CONFIG_STRUCT {
 	DWORD  debug;
@@ -43,6 +44,7 @@ typedef struct _KSERV_CONFIG_STRUCT {
     DWORD  internalResolutionHeight;
     DWORD  fullscreenWidth;
     DWORD  fullscreenHeight;
+	DWORD newResMem;
 
 } KSERV_CONFIG;
 

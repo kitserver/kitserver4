@@ -163,7 +163,12 @@ BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile)
 			LogWithNumber("ReadConfig: fullscreenHeight = %d\n", value);
 			config->fullscreenHeight = value;
 		}
-
+		else if (stricmp(name, "reserved.memory")==0 || stricmp(name, "ReservedMemory")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: reserved.memory = (%d)\n", value);
+			config->newResMem = value;
+		}
 	}
 	fclose(cfg);
 
