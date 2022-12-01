@@ -169,6 +169,37 @@ BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile)
 			LogWithNumber("ReadConfig: reserved.memory = (%d)\n", value);
 			config->newResMem = value;
 		}
+		else if (lstrcmp(name, "lod.level.1")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: lod1 = %d\n", value);
+			config->lod1 = value;
+		}
+		else if (lstrcmp(name, "lod.level.2")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: lod2 = %d\n", value);
+			config->lod2 = value;
+		}
+		else if (lstrcmp(name, "lod.level.3")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: lod3 = %d\n", value);
+			config->lod3 = value;
+		}
+		else if (lstrcmp(name, "lod.level.4")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: lod4 = %d\n", value);
+			config->lod4 = value;
+		}
+		else if (lstrcmp(name, "lod.level.5")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadConfig: lod5 = %d\n", value);
+			config->lod5 = value;
+		}
+
 	}
 	fclose(cfg);
 

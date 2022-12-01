@@ -57,6 +57,11 @@ KSERV_CONFIG g_config = {
     DEFAULT_FULLSCREEN_WIDTH,
     DEFAULT_FULLSCREEN_HEIGHT,
 	DEFAULT_RESERVED_MEMORY,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
 };
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
@@ -77,7 +82,7 @@ extern char* GAME_GUID[NUM_GUIDS];
 extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
 
 #define CODELEN 26
-#define DATALEN 13
+#define DATALEN 19
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
 
@@ -195,6 +200,8 @@ enum {
 	KIT_CHECK_TRIGGER,
     PROJ_W, CULL_W,
     INTRES_WIDTH, INTRES_HEIGHT,
+	LOD_TABLE,
+	LOD_VALUE_0, LOD_VALUE_1, LOD_VALUE_2, LOD_VALUE_3, LOD_VALUE_4,
 };
 
 
@@ -207,6 +214,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0,
 		0, 0,
 		0, 0,
+		0,
+		0, 0, 0, 0, 0, 
 	},
 	// PES4 DEMO
 	{ 
@@ -215,6 +224,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0,
 		0, 0,
 		0, 0,
+		0,
+		0, 0, 0, 0, 0, 
 	},
 	// PES4 1.10
 	{ 
@@ -223,6 +234,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x22fb5f8,
 		0x2381398, 0x2381374,
 		0x215dce0, 0x215dce4,
+		0xaca7e4,
+		9223296, 9223440, 9223584, 9223728, 9223872, 
 	},
 	// PES4 1.0
 	{ 
@@ -231,6 +244,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x22f9698,
 		0x237f418, 0x237f3f4,
 		0x215bd30, 0x215bd34,
+		0xac87fc,
+		9219184, 9219328, 9219472, 9219616, 9219760, 
 	},
 	// WE8I US
 	{ 
@@ -239,6 +254,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x22fb648,
 		0x23814d8, 0x23814b4,
 		0x215dd20, 0x215dd24,
+		0xaca824,
+		9227168, 9227312, 9227456, 9227600, 9227744, 
 	},
 	// WE8I K
 	{ 
@@ -247,6 +264,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x22ec150,
 		0x214f928, 0x214f904,
 		0x2154318, 0x215431c,
+		0x9e0068,
+		6775488, 6775632, 6775776, 6775920, 6776064, 
 	},
 
 
@@ -566,6 +585,7 @@ void Initialize(int v);
 void ResetCyclesAndBuffers2(void);
 void LoadKDB();
 void FixReservedMemory(void);
+void SetLodLevel(void);
 HRESULT SaveAs8bitBMP(char*, BYTE*);
 HRESULT SaveAs8bitBMP(char*, BYTE*, BYTE*, LONG, LONG);
 HRESULT SaveAsBMP(char*, BYTE*, SIZE_T, LONG, LONG, int);
@@ -1596,6 +1616,16 @@ void InitKserv()
     }
     LogWithDouble("game.speed = %0.2f", (double)g_config.gameSpeed);
 	FixReservedMemory();
+	if (
+	(g_config.lod1 >= 0 && g_config.lod1 < 5) &&
+	(g_config.lod2 >= 0 && g_config.lod2 < 5) &&
+	(g_config.lod3 >= 0 && g_config.lod3 < 5) &&
+	(g_config.lod4 >= 0 && g_config.lod4 < 5) &&
+	(g_config.lod5 >= 0 && g_config.lod5 < 5)
+	)
+	{
+		SetLodLevel();
+	}
 }
 
 BOOL WINAPI Override_QueryPerformanceFrequency(
@@ -3954,4 +3984,46 @@ void FixReservedMemory()
             }
         }
     }
+}
+
+DWORD GetLodLevel(int selection)
+{
+	switch (selection) {
+	case 0:
+	  return dta[LOD_VALUE_0];
+	case 1:
+	  return dta[LOD_VALUE_1];
+	case 2:
+	  return dta[LOD_VALUE_2];
+	case 3:
+	  return dta[LOD_VALUE_3];
+	case 4:
+	  return dta[LOD_VALUE_4];
+	default: 
+	  return dta[LOD_VALUE_0];
+	}
+	
+}
+
+void SetLodLevel()
+{
+    if (dta[LOD_TABLE]) {
+        DWORD protection = 0;
+        DWORD newProtection = PAGE_EXECUTE_READWRITE;
+        DWORD* addr = (DWORD*)dta[LOD_TABLE];
+        if (VirtualProtect(addr, 4*5, newProtection, &protection))
+        {
+            addr[0] = GetLodLevel(g_config.lod1);
+            addr[1] = GetLodLevel(g_config.lod2);
+            addr[2] = GetLodLevel(g_config.lod3);
+            addr[3] = GetLodLevel(g_config.lod4);
+            addr[4] = GetLodLevel(g_config.lod5);
+            
+            char buf[80]; ZeroMemory(buf, 80);
+            sprintf(buf, "Lod levels set to %d,%d,%d,%d,%d.",
+                    GetLodLevel(0), GetLodLevel(0), GetLodLevel(0),
+                    GetLodLevel(0), GetLodLevel(0));
+            Log(buf);
+        };
+    };
 }
