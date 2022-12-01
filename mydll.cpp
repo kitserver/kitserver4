@@ -4008,6 +4008,8 @@ DWORD GetLodLevel(int selection)
 void SetLodLevel()
 {
     if (dta[LOD_TABLE]) {
+    if (dta[LOD_TABLE]) 
+	{
         DWORD protection = 0;
         DWORD newProtection = PAGE_EXECUTE_READWRITE;
         DWORD* addr = (DWORD*)dta[LOD_TABLE];
@@ -4023,6 +4025,8 @@ void SetLodLevel()
             sprintf(buf, "Lod levels set to %d,%d,%d,%d,%d.",
                     GetLodLevel(0), GetLodLevel(0), GetLodLevel(0),
                     GetLodLevel(0), GetLodLevel(0));
+                    GetLodLevel(g_config.lod1), GetLodLevel(g_config.lod2), GetLodLevel(g_config.lod3),
+                    GetLodLevel(g_config.lod4), GetLodLevel(g_config.lod5));
             Log(buf);
         };
     };

@@ -45,12 +45,12 @@ typedef struct _KSERV_CONFIG_STRUCT {
     DWORD  internalResolutionHeight;
     DWORD  fullscreenWidth;
     DWORD  fullscreenHeight;
-	DWORD newResMem;
-	int lod1;
-	int lod2;
-	int lod3;
-	int lod4;
-	int lod5;
+	DWORD  newResMem;
+	int    lod1;
+	int    lod2;
+	int    lod3;
+	int    lod4;
+	int    lod5;
 
 } KSERV_CONFIG;
 
