@@ -1579,6 +1579,7 @@ void InitKserv()
 
 	// Determine adboards offsets
 
+	/*
 	for (b=0; b<ADBOARDS_COUNT; b++)
 	{
 		ZeroMemory(&g_adboardsTexs[b], sizeof(AFSITEMINFO));
@@ -1589,6 +1590,7 @@ void InitKserv()
 		LogWithNumber("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
 	}
 
+	*/
 
 	Log("Calculating etc_ee_tex.bin offset");
 	ZeroMemory(&g_etcEeTex, sizeof(AFSITEMINFO));
