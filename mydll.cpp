@@ -338,6 +338,14 @@ char* ballTexs_2[] = {
     "ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin", "ball17tex.bin", "ball18tex.bin",
 };
 
+#define ADBOARDS_COUNT 9
+
+char* adboardsTexs[] = {
+    "st_kb_tc_adikon.bin", "st_kb_tc_deu.bin", "st_kb_tc_eng.bin",
+    "st_kb_tc_esp.bin", "st_kb_tc_fra.bin", "st_kb_tc_ita.bin", 
+	"st_kb_tc_konami.bin", "st_kb_tc_we8u.bin", "st_kb_tc_we8um.bin",
+};
+
 
 AFSITEMINFO g_ballMdls[BALL_MDLS_COUNT];
 AFSITEMINFO g_ballTexs[BALL_TEXS_COUNT];
@@ -345,9 +353,12 @@ AFSITEMINFO g_ballTexs[BALL_TEXS_COUNT];
 AFSITEMINFO g_ballMdls_2[BALL_MDLS_COUNT_2];
 AFSITEMINFO g_ballTexs_2[BALL_TEXS_COUNT_2];
 
+AFSITEMINFO g_adboardsTexs[ADBOARDS_COUNT];
+
 
 BYTE* g_ballMdl = NULL;
 BYTE* g_ballTex = NULL;
+BYTE* g_adboardTex = NULL;
 BallEntry* g_balls = NULL;
 
 // text labels for default strips
@@ -569,6 +580,49 @@ BOOL IsEditedKit(int slot);
 //////////////////////////////////////////////////////////////
 // FUNCTIONS /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
+
+void LoadStad()
+{
+	Log("Init LoadStad");
+	FILE* f;
+	DWORD size;
+
+	// clear out the pointers
+	g_adboardTex = NULL; 
+	char* tex = "test/adboards_tex/default.bin";
+	// load model file (optional)
+	//if (tex != NULL && tex[0] != '\0') // Condition may be useful for later
+	//{
+		char filename[BUFLEN];
+		ZeroMemory(filename, BUFLEN);
+		lstrcpy(filename, g_config.kdbDir);
+		lstrcat(filename, "KDB/stadiums/"); 
+		lstrcat(filename, tex);
+		LogWithString("LoadStad: trying to open g_adboardTex file: %s.", filename);
+		f = fopen(filename, "rb");
+		if (f != NULL)
+		{
+			fseek(f, 4, SEEK_SET);
+			fread(&size, 4, 1, f);
+			fseek(f, 0, SEEK_SET);
+			g_adboardTex = (BYTE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size + 32);
+			fread(g_adboardTex, size + 32, 1, f);
+			fclose(f);
+			TRACE2("LoadStad: g_adboardTex address = %08x", (DWORD)g_adboardTex);
+			LogWithNumber("LoadStad: g_adboardTex address = %08x", (DWORD)g_adboardTex);
+		}
+		else
+			LogWithString("LoadStad: unable to open g_adboardTex file: %s.", tex);
+	//}
+}
+
+void FreeStad()
+{
+	if (g_adboardTex) HeapFree(GetProcessHeap(), 0, g_adboardTex);
+	g_adboardTex = NULL;
+	Log("Stad memory freed.");
+}
+
 
 // loads the ball model and texture into 2 global buffers
 void LoadBall(Ball* ball)
@@ -1503,6 +1557,18 @@ void InitKserv()
 
 	}
 
+	// Determine adboards offsets
+
+	for (b=0; b<ADBOARDS_COUNT; b++)
+	{
+		ZeroMemory(&g_adboardsTexs[b], sizeof(AFSITEMINFO));
+		result = GetItemInfo(g_afsFileName, adboardsTexs[b], &g_adboardsTexs[b], &base);
+		if (result != AFS_OK)
+			LogWithString("ERROR: %s", GetAfsErrorText(result));
+		TRACE2("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
+		LogWithNumber("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
+	}
+
 
 	Log("Calculating etc_ee_tex.bin offset");
 	ZeroMemory(&g_etcEeTex, sizeof(AFSITEMINFO));
@@ -1897,8 +1963,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyNextBall)
 				{
@@ -1907,8 +1975,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyRandomBall)
 				{
@@ -1924,8 +1994,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyResetBall)
 				{
@@ -2024,6 +2096,7 @@ void LoadKDB()
 
 		// initialize ball-cycle
 		FreeBall(); // free any currently loaded ball
+		FreeStad();
 		g_balls = NULL;
 
 		TRACE("KDB loaded.");
@@ -2733,6 +2806,14 @@ DWORD JuceUniDecrypt(DWORD addr, DWORD size)
 }
 
 // helper function
+BOOL IsAdboardTexOffset(DWORD offset)
+{
+	for (int i=0; i<ADBOARDS_COUNT; i++)
+		if (g_adboardsTexs[i].dwOffset == offset) return true;
+	return false;
+}
+
+// helper function
 BOOL IsBallModelOffset(DWORD offset)
 {
 	int v = GetGameVersion();
@@ -2790,6 +2871,15 @@ DWORD JuceUnpack(DWORD addr1, DWORD addr2, DWORD size1, DWORD size2)
 		addr1 = (DWORD)g_ballMdl + sizeof(ENCBUFFERHEADER);
 		size1 = ((ENCBUFFERHEADER*)g_ballMdl)->dwEncSize;
 		size2 = ((ENCBUFFERHEADER*)g_ballMdl)->dwDecSize;
+	}
+	if (IsAdboardTexOffset(g_offset) && g_adboardTex != NULL)
+	{
+		Log("JuceUnpack: unpacking adboard texture");
+
+		// swap source buffer and sizes
+		addr1 = (DWORD)g_adboardTex + sizeof(ENCBUFFERHEADER);
+		size1 = ((ENCBUFFERHEADER*)g_adboardTex)->dwEncSize;
+		size2 = ((ENCBUFFERHEADER*)g_adboardTex)->dwDecSize;
 	}
 	else 
 	{
@@ -2863,6 +2953,14 @@ DWORD JuceAllocMem(DWORD infoBlock, DWORD param2, DWORD size)
 			size = header->dwDecSize;
 			TRACE2("JuceAllocMem: requesting size: %08x", size);
 		}
+	}
+	else if (IsAdboardTexOffset(g_offset) && g_adboardTex != NULL)
+	{
+		LogWithNumber("JuceAllocMem: adboard-tex: Size needed: %08x", size);
+		// overwrite size
+		ENCBUFFERHEADER* header = (ENCBUFFERHEADER*)g_adboardTex;
+		size = header->dwDecSize;
+		LogWithNumber("JuceAllocMem: requesting size: %08x", size);
 	}
 
 	// call the target function
