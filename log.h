@@ -23,12 +23,14 @@ void Log(char* msg);
 void LogWithNumber(char* msg, DWORD number);
 void LogWithDouble(char* msg, double number);
 void LogWithString(char* msg, char* str);
+void LogWithTwoNumbers(char* msg, DWORD a, DWORD b);
 
 void Debug(char* msg);
 void DebugWithNumber(char* msg, DWORD number);
 void DebugWithDouble(char* msg, double number);
 void DebugWithString(char* msg, char* str);
 void DebugWithThreeNumbers(char* msg, DWORD a, DWORD b, DWORD c);
+void DebugWithTwoNumbers(char* msg, DWORD a, DWORD b);
 
 #endif
 
