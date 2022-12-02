@@ -2,22 +2,32 @@ BUILD INSTRUCTIONS
 ==========================================================================
 
 The Makefile (in the src folder) is intended to be used by Microsoft NMAKE 
-tool, which comes with Visual C++ 6. You will need the following 3rd-party
-software to build this program:
+tool, which comes with Visual Studio 2019 Community Edition.
 
-- DirectX 8.1 SDK
+All dependencies are included, so you do not need to install any other
+software to build this program
 
-Modify the setenv.cmd so that it sets correct paths.
+Modify the setenv.vs2019.cmd so that it points to correct location
+of your Visual Studio.
 
-To build:
-Open a command prompt window, and run "setenv.cmd" to set up the environment.
+Two types of build are supported:
 
-Two types of build are supported by the current Makefile: 
-"debug" and "release"
+RELEASE:
 
-To do a "debug" build, just type "nmake".
-To do a "release" build, type "nmake release".
+    nmake
+
+DEBUG:
+
+    nmake debug=1
+
+To delete all object files in preparation for clean re-build:
+
+    nmake clean-all
+
+Currently, the difference between "debug" and "release" builds is in the
+way the debug configuration parameter is treated. The "release" build
+ignores debug values > 1, while "debug" build provides more detailed 
+logging for debug > 1. This behaviour, however, may change in the future.
 
 (NOTE: You can also build the EXE and DLL files separately, using 
 appropriate targets, specified in the Makefile.)
-
