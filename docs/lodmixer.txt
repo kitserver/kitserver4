@@ -1,0 +1,75 @@
+LOD Mixer Module for Kitserver 4                                December 2,2022
+=============================================================================
+Version 4.5.0 
+
+
+1. SUPPORTED GAME VERSIONS
+--------------------------
+PC: PES4 1.0, PES4 1.10, WE8I (US & Korea)
+
+2. INTRODUCTION
+---------------
+This is a version of LOD Mixer that works together with Kitserver, as the
+run-time module. Unlike the original LOD Mixer, this module does NOT modify
+your EXE file, but instead makes the changes at run-time in memory - the
+same way as Kitserver works. 
+
+This tool is just for Level-of-Detail adjustment for player and
+goalkeeper models.
+
+
+3. THE IDEA OF LOD
+------------------
+This is by no means a formal definition of Level-of-Detail (LOD) idea, but
+merely a short introduction to the concept, which will hopefully be helpful 
+in understanding what the LOD Mixer program does, and how to use it.
+Typically (and PES4/WE8 are no exception), a rendering engine in 3D games is
+designed to take advantage of the fact that objects that look small need
+simpler models than objects that look big. A close-up view of a car may
+require thousands of polygons to look convincing, but may only need a few
+hundred when the distance between it and the camera is big and the amount
+of pixels it occupies on the screen is small. By using simpler models for 
+far-away objects, the game engine saves GPU cycles that could be used for
+creating additional visual effects, or just to maintaining a smooth frame
+rate. Level-Of-Detail algorithm is the logic that decides when to use
+a particular model for a particular object. 
+
+For the task of rendering players and goalkeepers, PES4 and WE8I/K use 5 
+different levels of detail, which are dynamically switched depending on 
+a set of factors: distance from camera to player, playing mode, active 
+player, etc.
+
+#1: Very high-detail models, big (512x256) textures",
+#2: High-detail models, medium (256x128) textures",
+#3: Medium-detail models, medium (256x128) textures",
+#4: Low-detail models, small (128x64) textures",
+#5: Very low-detail models, small (128x64) textures",
+
+LOD #1 is used for cut-scenes and more in replays than in actual game. It's
+the only one that uses best quality kit textures - 512x256. LOD #2 and #3
+are typically used for many cameras, including "Normal Long" and "Wide". 
+LOD #2 is also used for some cut-scenes - like pre-match photos, for example,
+and also in replays. LOD #4 - on "Wide" and "Bird's Eye", and LOD #5 i was 
+only able to see with "Bird's-Eye" cameras.
+
+To illustrate the concept, consider this scenario:
+The camera is really close to the player, so the game engine selects LOD #1
+to show the very well detailed model of the player with nice-looking textures
+As the player moves away from the camera, at some point the game engine 
+decides that the very high level of detail is not needed anymore, and it 
+should be switched to next one - LOD #2, since the camera is now 
+far enough and the user won't notice the difference. Here's where the problem
+occurs with PES4 and WE8I/K: we actually DO see the 
+difference, because KONAMI implemented a very aggressive LOD algorithm and it 
+switches to lower-detail models way too early, and that's why we see annoying 
+artifacts, as player balding and low-quality kit textures. I can only guess 
+why they did it, and i think it's because the lowest denominator system 
+- PS2 - couldn't sustain the smooth frame rate with a more concervative 
+LOD switching algorithm.
+
+
+4. CREDITS
+----------
+Game algorithms analysis and programming by Juce and marqisspes6.
+Beta testing: NamedHwi, Master Saborio, Master_Splinter, FootballerPOMAH, galaxy
+

@@ -43,12 +43,13 @@ Version history: <a href="history.txt">history.txt</a><br />
 </div>
 <h2>Kitserver 4.4.1 Manual</h2>
 <div>
-October 30, 2018<br />
+December 02, 2022<br />
 Module Versions: 
-<a href="#kitserver">Kserv 4.4.1</a>,
-<a href="#ballserver">BallServer: 4.4.1</a>,
-<a href="#lodmixer">LOD Mixer: 4.4.1</a>,
-<a href="#speeder">Speeder 4.4.1</a>
+<a href="#kitserver">Kserv 4.5.0</a>,
+<a href="#ballserver">BallServer: 4.5.0</a>,
+<a href="#speeder">Speeder 4.5.0</a>,
+<a href="#camera">Camera Zoomer 4.5.0</a>,
+<a href="#lodmixer">LOD Mixer: 4.5.0</a>,
 </div><hr>
 
 <!-- ### GENERAL ### -->
@@ -316,24 +317,24 @@ This way everything is kept in one place and is easier to manage.
 
 <h4>5. HOW TO PREPARE KITS</h4>
 
+<h2>Step #1 is to download a kit.</h2><br>
 <p>
-Step #1 is to download a kit.
-You can use pretty much any PES4 kit in 512x256 BMP format.
-(Which is how all major kitmakers - Spark, kEL, biker_jim_uk, and others -
-distribute the kits). 
+You can use pretty much any PES4 kit in 512x256 BMP format.<br>
+(Which is how all major kitmakers - Spark, kEL, biker_jim_uk, and others distribute the kits). <br><br>
 
-Many kits are already prepared with correct transparency.
-(For example, kits from kitpacks done by Spark are like this. 
-Download them here: http://www.pespc-files.com)
-If you downloaded such kit, you don't need to do anything extra.
-Otherwise, make sure you follow Step #2:
-
-Step #2 is to set proper transparency for the BMP palette.
-For that, you can use obocaman's WE/PES Graphics Studio v04.04.24 
-(or later). In the right section ("Bitmap Info"), open your BMP, then 
-set all the colors to be opaque. After that, in palette, select the 
-color(s) that you need to be transparent (usually some bright green 
-or pink), and set its opacity to 0%. Save the kit, by right-clicking 
+Many kits are already prepared with correct transparency.<br>
+(For example, kits from kitpacks done by Spark are like this. <br>
+Download them here: http://www.pespc-files.com)<br>
+If you downloaded such kit, you don't need to do anything extra.<br>
+Otherwise, make sure you follow Step #2:<br><br>
+</p>
+<h2>Step #2 is to set proper transparency for the BMP palette.<br></h2>
+<p>
+For that, you can use obocaman's WE/PES Graphics Studio v04.04.24 <br>
+(or later). In the right section ("Bitmap Info"), open your BMP, then <br>
+set all the colors to be opaque. After that, in palette, select the <br>
+color(s) that you need to be transparent (usually some bright green <br>
+or pink), and set its opacity to 0%. Save the kit, by right-clicking <br>
 on it, and choosing "Save As" menu item.</p>
 
 <!-- ad middle -->
@@ -431,7 +432,70 @@ Example setting in kserv.cfg:
 
 <pre>game.speed = 0.97</pre>
 
-<h2>10. FULLSCREEN AND INTERNAL RESOLUTION</h2>
+<h2 id="camera">10. CAMERA ZOOMER</h2>
+
+<p>
+You can also alter the camera zoom now for some camera modes (WIDE, NORMAL), you can set this on your camerazoomer.cfg.
+Also you can fix the clipping effect that makes the crowd dissapear and add the stadium roof to render.
+Example setting in camerazoomer.cfg:
+</p>
+
+<pre>
+    zoom = 1150
+    fix_stadium_clipping = 1
+    add_stadium_roof = 0
+</pre>
+
+<h2 id="lodmixer">11. LOD MIXER</h2>
+
+<h3>11.1 How to use</h3>
+
+<p>
+KitServer now includes a few more lines into kserv.cfg. This will allow to do
+some tweaks to the graphical engine of the game, such as Level-Of-Detail table adjustment.
+</p>
+<p>open <b>kserv.cfg</b> to configure the LOD Mixer settings. Here's an example of how that
+looks:
+</p> 
+<pre>
+    lod.level.1 = 0
+    lod.level.2 = 1
+    lod.level.3 = 2
+    lod.level.4 = 3
+    lod.level.5 = 4
+    
+</pre>
+
+<p>
+
+Possible values are: 
+
+<pre>
+0 - Very high-detail models, big (512x256) textures
+1 - High-detail models, medium (256x128) textures
+2 - Medium-detail models, medium (256x128) textures
+3 - Low-detail models, small (128x64) textures
+4 - very Low-detail models, small (128x64) textures
+</pre>
+</p>
+
+<div class="NOTE">
+    For complete documentation see this file: <b><a href="lodmixer.txt">lodmixer.txt</a></b>
+</div>
+
+<h2>12. Master League Starting Year</h2>
+
+<p>
+You can also alter the Master League Starting year now, you can set this on your ml.cfg.
+Example setting in ml.cfg:
+</p>
+
+<pre>
+    ml.starting.year = 2022
+</pre>
+
+
+<h2>13. FULLSCREEN AND INTERNAL RESOLUTION</h2>
 
 <p>
 Since version 4.4.0, two new sets of options are supported in kserv.cfg,
@@ -476,7 +540,7 @@ internal.resolution.width = 3072
 internal.resolution.height = 2048
 </pre>
 
-<h2>10. TROUBLESHOOTING</h2>
+<h2>14. TROUBLESHOOTING</h2>
 
 <p>Sometimes, during Kitserver install, the "auto-detect" selection of 
 operating system fails. This results in the following: the game crashes 
@@ -497,19 +561,19 @@ box saying that Kitserver was successfully installed should appear.
 5. Exit setup.</pre>
 
 
-<h2>11. Credits</h2>
+<h2>15. Credits</h2>
 
 <p>
-Programming: <b>juce</b><br />
+Programming: <b>juce</b>, <b>marqisspes6</b><br />
 Internal resolution research: <b>Kingsley813</b><br />
-Testing: <b>Jim (biker_jim_uk)</b><br />
+Testing: <b>Jim (biker_jim_uk)</b>, <b>NamedHwi</b>, <b>Master Saborio</b>, <b>Master_Splinter</b>, <b>FootballerPOMAH</b>, <b>galaxy</b><br />
 Sample kits: <b>(c)Spark</b>, <b>(c)kEL</b><br />
 Sample balls: <b>(c)Spark</b><br />
 Nike Aerow ball 3D-model: <b>Ariel Santarelli</b><br />
 <p>
 
 Documentation:<br />
-English: <b>juce</b><br />
+English: <b>juce</b>, <b>marqisspes6</b><br />
 </p>
 
 <p>

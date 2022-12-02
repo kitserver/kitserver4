@@ -1,5 +1,13 @@
-KitServer CHANGE LOG                                        October 30, 2018
+KitServer CHANGE LOG                                        December 02, 2022
 ============================================================================
+4.5.0
+-----
+- support for we8ik
+- support for reserved memory
+New Features:
+- Camera zoom mod
+- LOD Mixer
+- Master League Starting year
 
 4.4.1
 -----
