@@ -56,7 +56,26 @@ KSERV_CONFIG g_config = {
     DEFAULT_INTRES_HEIGHT,
     DEFAULT_FULLSCREEN_WIDTH,
     DEFAULT_FULLSCREEN_HEIGHT,
+	DEFAULT_RESERVED_MEMORY,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
+	DEFAULT_LOD,
 };
+
+CAMERA_CONFIG g_camera_config = {
+	DEFAULT_DEBUG,
+	DEFAULT_ZOOM,
+	DEFAULT_FIX_CLIP,
+	DEFAULT_ADD_ROOF,
+};
+
+ML_CONFIG g_ml_config = {
+	DEFAULT_DEBUG,
+	DEFAULT_STARTING_YEAR,
+};
+
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
 
@@ -69,12 +88,13 @@ bool _internalResSet = false;
 bool g_fontInitialized = false;
 CD3DFont* g_font = NULL;
 
-extern char* GAME[6];
-extern char* GAME_GUID[5];
-extern DWORD GAME_GUID_OFFSETS[5];
+#define NUM_GUIDS 6
 
-#define CODELEN 23
-#define DATALEN 13
+extern char* GAME[NUM_GUIDS + 1];
+extern char* GAME_GUID[NUM_GUIDS];
+extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
+
+#define CODELEN 26
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
 
@@ -91,68 +111,198 @@ enum {
 	C_FINISHKITPICK, C_FINISHKITPICK_CS,
 	C_ALLOCMEM, C_ALLOCMEM_CS,
 	C_RESETFLAGS, C_RESETFLAGS_CS,
+	C_RESMEM1, C_RESMEM2, C_RESMEM3,
+};
+
+
+// Code addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
+DWORD codeArray[NUM_GUIDS][CODELEN] = { 
+	// PES4 DEMO 2
+	{ 
+		0x72f520, 0x6d29ba, 0x6d2a1c, 
+		0x4a2c20, 0x6d29b4, 0x418116, 
+		0, 0, 0,
+		0, 0, 
+		0, 0, 
+		0, 0, 
+		0, 0,
+		0, 0, 
+		0, 0, 
+		0x45d580, 0x4748f4,
+		0, 0, 0,
+	},
+	// PES4 DEMO
+	{
+		0x72f1a0, 0x6d2a2a, 0x6d2a8c, 
+		0x4a2d40, 0x6d2a24, 0x418156, 
+		0, 0, 0,
+		0, 0, 
+		0, 0, 
+		0, 0, 
+		0, 0,
+		0, 0, 
+		0, 0, 
+		0x45d6a0, 0x47a414,
+		0, 0, 0,
+	},
+	// PES4 1.10
+	{ 
+		0x92a430, 0x8cdfea, 0x8ce04c, 
+		0, 0, 0x41d7f6, 
+		0x92a3f0, 0x69059b, 0x671c20,
+		0x981743, 0x98174a, 
+		0x5fe68e, 0x5fe6cc, 
+		0x48ea1b, 0x48ea21, 
+		0x93a476, 0x93a47d,
+		0x5f30c0, 0x5fd87a, 
+		0x68ff50, 0x690589, 
+		0x5fb320, 0x60a9f8,
+		0x8c5f9d, 0x8c5fb2, 0x8c5fc9,
+	},
+	// PES4 1.0
+	{ 
+		0x929370, 0x8ccfda, 0x8cd03c, 
+		0, 0, 0x41d6d6, 
+		0x929330, 0x6902fb, 0x671990,
+		0x980663, 0x98066a, 
+		0x5fe48e, 0x5fe4cc, 
+		0x48e82b, 0x48e831, 
+		0x9393b6, 0x9393bd,
+		0x5f2ec0, 0x5fd67a, 
+		0x68fce0, 0x6902e9, 
+		0x5fb120, 0x60a7b8,
+		0x8c55dd, 0x8c55f2, 0x8c5609,
+	},
+	// WE8I US
+	{ 
+		0x92b470, 0x8cef0a, 0x8cef6c, 
+		0, 0, 0x41d7e6, 
+		0x92b430, 0x690cab, 0x672490,
+		0x982783, 0x98278a, 
+		0x5fee8e, 0x5feecc, 
+		0x48e9eb, 0x48e9f1, 
+		0x93b4c6, 0x93b4cd,
+		0x5f38d0, 0x5fe07a, 
+		0x690690, 0x690c99, 
+		0x5fbb20, 0x60b228,
+		0x8c700d, 0x8c7022, 0x8c7039,
+	},
+	
+	// WE8IK
+	{
+		0x6cace0, 0x67800a, 0x67806c, 
+		0, 0, 0x41eb16,
+		0x6caca0, 0x43bd2b, 0x8b5ab0,
+		0x950e63, 0x950e6a,
+		0x84268e, 0x8426cc,
+		0x7082eb, 0x7082f1,
+		0x909a26, 0x909a2d,
+		0x837070, 0x84187a,
+		0x43b710, 0x43bd19,
+		0x83f320, 0x84e9e8,
+		0x8c9ced, 0x8c9d02, 0x8c9d19,
+	},
+
 };
 
 // data array names
+#define DATALEN 28
 enum {
 	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
 	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
 	KIT_CHECK_TRIGGER,
     PROJ_W, CULL_W,
     INTRES_WIDTH, INTRES_HEIGHT,
+	LOD_TABLE,
+	LOD_VALUE_0, LOD_VALUE_1, LOD_VALUE_2, LOD_VALUE_3, LOD_VALUE_4,
+	CAMERA_ZOOM, FIX_STAD_CLIPPING, ADD_STAD_ROOF,
+	ML_START_YEAR_1, ML_START_YEAR_2, ML_START_YEAR_3, 
+	ML_START_YEAR_4, ML_START_YEAR_5, ML_START_YEAR_6, 
 };
 
-// Code addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
-DWORD codeArray[5][CODELEN] = { 
-	// PES4 DEMO 2
-	{ 0x72f520, 0x6d29ba, 0x6d2a1c, 0x4a2c20, 0x6d29b4, 0x418116, 0, 0, 0,
-	  0, 0, 0, 0, 0, 0, 0, 0,
-	  0, 0, 0, 0, 0x45d580, 0x4748f4},
-	// PES4 DEMO
-	{ 0x72f1a0, 0x6d2a2a, 0x6d2a8c, 0x4a2d40, 0x6d2a24, 0x418156, 0, 0, 0,
-	  0, 0, 0, 0, 0, 0, 0, 0,
-	  0, 0, 0, 0, 0x45d6a0, 0x47a414},
-	// PES4 1.10
-	{ 0x92a430, 0x8cdfea, 0x8ce04c, 0, 0, 0x41d7f6, 0x92a3f0, 0x69059b, 0x671c20,
-	  0x981743, 0x98174a, 0x5fe68e, 0x5fe6cc, 0x48ea1b, 0x48ea21, 0x93a476, 0x93a47d,
-	  0x5f30c0, 0x5fd87a, 0x68ff50, 0x690589, 0x5fb320, 0x60a9f8},
-	// PES4 1.0
-	{ 0x929370, 0x8ccfda, 0x8cd03c, 0, 0, 0x41d6d6, 0x929330, 0x6902fb, 0x671990,
-	  0x980663, 0x98066a, 0x5fe48e, 0x5fe4cc, 0x48e82b, 0x48e831, 0x9393b6, 0x9393bd,
-	  0x5f2ec0, 0x5fd67a, 0x68fce0, 0x6902e9, 0x5fb120, 0x60a7b8},
-	// WE8I US
-	{ 0x92b470, 0x8cef0a, 0x8cef6c, 0, 0, 0x41d7e6, 0x92b430, 0x690cab, 0x672490,
-	  0x982783, 0x98278a, 0x5fee8e, 0x5feecc, 0x48e9eb, 0x48e9f1, 0x93b4c6, 0x93b4cd,
-	  0x5f38d0, 0x5fe07a, 0x690690, 0x690c99, 0x5fbb20, 0x60b228},
-};
 
 // Data addresses. Order: PES4 DEMO 2, PES4 DEMO, PES4 1.10, PES4 1.0
-DWORD dataArray[5][DATALEN] = {
+DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 	// PES4 DEMO 2
-	{ 0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
-	  0, 0, 0, 0,
-      0, 0,
-      0, 0},
+	{
+		0x48f69e0, 0x48f7982, 0x1e2f370, 202, 0,
+		0, 0, 0, 
+		0,
+		0, 0,
+		0, 0,
+		0,
+		0, 0, 0, 0, 0, 
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+	},
 	// PES4 DEMO
-	{ 0x48c7a60, 0x48c8a02, 0x1e019b0, 202, 0,
-	  0, 0, 0, 0,
-      0, 0,
-      0, 0},
+	{ 
+		0x48c7a60, 0x48c8a02, 0x1e019b0, 202, 0,
+		0, 0, 0, 
+		0,
+		0, 0,
+		0, 0,
+		0,
+		0, 0, 0, 0, 0, 
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+	},
 	// PES4 1.10
-	{ 0x4e40ca0, 0x4e41c42, 0x215d570, 205, 0x232f208,
-	  0x4def7a0, 0xa060bc, 0x4e436c4, 0x22fb5f8,
-      0x2381398, 0x2381374,
-      0x215dce0, 0x215dce4},
+	{ 
+		0x4e40ca0, 0x4e41c42, 0x215d570, 205, 0x232f208,
+		0x4def7a0, 0xa060bc, 0x4e436c4, 
+		0x22fb5f8,
+		0x2381398, 0x2381374,
+		0x215dce0, 0x215dce4,
+		0xaca7e4,
+		9223296, 9223440, 9223584, 9223728, 9223872, 
+		0x45e58d, 0x676737, 0x9da8C8,
+		0x525fe2, 0x528d63, 0x52b57e,
+		0x52b584, 0x55bca1, 0x58df55,
+	},
 	// PES4 1.0
-	{ 0x4e3ed40, 0x4e3fce2, 0x215b5c0, 205, 0x232d290,
-	  0x4ded840, 0xa040bc, 0x4e416c4, 0x22f9698,
-      0x237f418, 0x237f3f4,
-      0x215bd30, 0x215bd34},
+	{ 
+		0x4e3ed40, 0x4e3fce2, 0x215b5c0, 205, 0x232d290,
+		0x4ded840, 0xa040bc, 0x4e416c4, 
+		0x22f9698,
+		0x237f418, 0x237f3f4,
+		0x215bd30, 0x215bd34,
+		0xac87fc,
+		9219184, 9219328, 9219472, 9219616, 9219760, 
+		0x45e3ad, 0x6764A7, 0x9d9890,
+		0x525e72, 0x528bf3, 0x52b40e,
+		0x52b414, 0x55bb31, 0x58dde5,
+	},
 	// WE8I US
-	{ 0x4e40e40, 0x4e41de2, 0x215d5b0, 205, 0x232f348,
-	  0x4def780, 0xa060bc, 0x4e43864, 0x22fb648,
-      0x23814d8, 0x23814b4,
-      0x215dd20, 0x215dd24},
+	{ 
+		0x4e40e40, 0x4e41de2, 0x215d5b0, 205, 0x232f348,
+		0x4def780, 0xa060bc, 0x4e43864, 
+		0x22fb648,
+		0x23814d8, 0x23814b4,
+		0x215dd20, 0x215dd24,
+		0xaca824,
+		9227168, 9227312, 9227456, 9227600, 9227744, 
+		0x45e55d, 0x676ed7, 0x9db600,
+		0x525fd2, 0x528a93, 0x52b2ae,
+		0x52b2b4, 0x55b9d1, 0x58dc85,
+	},
+	// WE8I K
+	{ 
+		0x4c4f3a0, 0x4c50342, 0x214f678, 205, 0x20fdd10,
+		0x4bfdc40, 0x9e514c, 0x4c51d44, //0x4c51dc4,
+		0x22ec150,
+		0x214f928, 0x214f904,
+		0x2154318, 0x215431c,
+		0x9e0068,
+		6775488, 6775632, 6775776, 6775920, 6776064, 
+		0x6d6f6d, 0x8bb417, 0x9ad584,
+		0x79ec52, 0x7a1713, 0x7a3f3e,
+		0x7a3f44, 0x7d48f1, 0x806685,
+	},
+
+
 };
 
 // NOTE: when looking for mirror address of 0x4c90c98 (PES4 1.10),
@@ -160,7 +310,7 @@ DWORD dataArray[5][DATALEN] = {
 // adjust by the same difference (0x28c)
 
 DWORD code[CODELEN];
-DWORD data[DATALEN];
+DWORD dta[DATALEN];
 
 #define NUM_BALLS 2
 
@@ -228,11 +378,40 @@ char* ballTexs[] = {
 	"ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin",
 };
 
+#define BALL_MDLS_COUNT_2 10
+#define BALL_TEXS_COUNT_2 9
+
+char* ballMdls_2[] = { 
+    "ball00mdl.bin", "ball02mdl.bin", "ball08mdl.bin",
+    "ball09mdl.bin", "ball10mdl.bin", "ball14mdl.bin", "ball15mdl.bin", "ball17mdl.bin", "ball18mdl.bin",
+    "ball_mdl.bin",
+};
+char* ballTexs_2[] = {
+    "ball00tex.bin", "ball02tex.bin", "ball08tex.bin",
+    "ball09tex.bin", "ball10tex.bin", "ball14tex.bin", "ball15tex.bin", "ball17tex.bin", "ball18tex.bin",
+};
+
+#define ADBOARDS_COUNT 9
+
+char* adboardsTexs[] = {
+    "st_kb_tc_adikon.bin", "st_kb_tc_deu.bin", "st_kb_tc_eng.bin",
+    "st_kb_tc_esp.bin", "st_kb_tc_fra.bin", "st_kb_tc_ita.bin", 
+	"st_kb_tc_konami.bin", "st_kb_tc_we8u.bin", "st_kb_tc_we8um.bin",
+};
+
+
 AFSITEMINFO g_ballMdls[BALL_MDLS_COUNT];
 AFSITEMINFO g_ballTexs[BALL_TEXS_COUNT];
 
+AFSITEMINFO g_ballMdls_2[BALL_MDLS_COUNT_2];
+AFSITEMINFO g_ballTexs_2[BALL_TEXS_COUNT_2];
+
+AFSITEMINFO g_adboardsTexs[ADBOARDS_COUNT];
+
+
 BYTE* g_ballMdl = NULL;
 BYTE* g_ballTex = NULL;
+BYTE* g_adboardTex = NULL;
 BallEntry* g_balls = NULL;
 
 // text labels for default strips
@@ -266,8 +445,8 @@ float PI = 3.1415926f;
 float R = ((float)IHEIGHT)/2.0f;
 float d18 = PI/10.0f;
 float d54 = d18*3.0f;
-float y[] = { R*sin(d18), R, R*sin(d18), -R*sin(d54), -R*sin(d54), R*sin(d18), R*sin(d18) }; 
-float x[] = { R*cos(d18), 0.0f, -R*cos(d18), -R*cos(d54), R*cos(d54) };
+float y[] = { R* float(sin(d18)), R, R* float(sin(d18)), -R* float(sin(d54)), -R* float(sin(d54)), R* float(sin(d18)), R* float(sin(d18)) }; 
+float x[] = { R* float(cos(d18)), 0.0f, -R* float(cos(d18)), -R* float(cos(d54)), R* float(cos(d54)) };
 float x5 = x[4]*(y[1] - y[5])/(y[1] - y[4]);
 float x6 = -x5;
 
@@ -439,6 +618,11 @@ int GetGameVersion(void);
 void Initialize(int v);
 void ResetCyclesAndBuffers2(void);
 void LoadKDB();
+void FixReservedMemory(void);
+void SetLodLevel(void);
+void SetCameraData(void);
+void SetMLData(void);
+
 HRESULT SaveAs8bitBMP(char*, BYTE*);
 HRESULT SaveAs8bitBMP(char*, BYTE*, BYTE*, LONG, LONG);
 HRESULT SaveAsBMP(char*, BYTE*, SIZE_T, LONG, LONG, int);
@@ -453,6 +637,49 @@ BOOL IsEditedKit(int slot);
 //////////////////////////////////////////////////////////////
 // FUNCTIONS /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
+
+void LoadStad()
+{
+	Log("Init LoadStad");
+	FILE* f;
+	DWORD size;
+
+	// clear out the pointers
+	g_adboardTex = NULL; 
+	char* tex = "test/adboards_tex/default.bin";
+	// load model file (optional)
+	//if (tex != NULL && tex[0] != '\0') // Condition may be useful for later
+	//{
+		char filename[BUFLEN];
+		ZeroMemory(filename, BUFLEN);
+		lstrcpy(filename, g_config.kdbDir);
+		lstrcat(filename, "KDB/stadiums/"); 
+		lstrcat(filename, tex);
+		LogWithString("LoadStad: trying to open g_adboardTex file: %s.", filename);
+		f = fopen(filename, "rb");
+		if (f != NULL)
+		{
+			fseek(f, 4, SEEK_SET);
+			fread(&size, 4, 1, f);
+			fseek(f, 0, SEEK_SET);
+			g_adboardTex = (BYTE*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size + 32);
+			fread(g_adboardTex, size + 32, 1, f);
+			fclose(f);
+			TRACE2("LoadStad: g_adboardTex address = %08x", (DWORD)g_adboardTex);
+			LogWithNumber("LoadStad: g_adboardTex address = %08x", (DWORD)g_adboardTex);
+		}
+		else
+			LogWithString("LoadStad: unable to open g_adboardTex file: %s.", tex);
+	//}
+}
+
+void FreeStad()
+{
+	if (g_adboardTex) HeapFree(GetProcessHeap(), 0, g_adboardTex);
+	g_adboardTex = NULL;
+	Log("Stad memory freed.");
+}
+
 
 // loads the ball model and texture into 2 global buffers
 void LoadBall(Ball* ball)
@@ -484,6 +711,7 @@ void LoadBall(Ball* ball)
 			fread(g_ballMdl, size + 32, 1, f);
 			fclose(f);
 			TRACE2("LoadBall: g_ballMdl address = %08x", (DWORD)g_ballMdl);
+			LogWithNumber("LoadBall: g_ballMdl address = %08x", (DWORD)g_ballMdl);
 		}
 		else
 			LogWithString("LoadBall: unable to open ball model file: %s.", mdl);
@@ -518,6 +746,7 @@ void LoadBall(Ball* ball)
 			fread(g_ballTex, size + 32, 1, f);
 			fclose(f);
 			TRACE2("LoadBall: g_ballTex address = %08x", (DWORD)g_ballTex);
+			LogWithNumber("LoadBall: g_ballTex address = %08x", (DWORD)g_ballTex);
 		}
 		else
 			LogWithString("LoadBall: unable to open ball texture file: %s.", tex);
@@ -772,13 +1001,14 @@ void DrawBallLabel(IDirect3DDevice8* dev)
 	SIZE size;
 	g_font->GetTextExtent(buf, &size);
 	g_font->DrawText( g_bbWidth/2 - size.cx/2,  POSY + IHEIGHT + 10, color, buf);
-	//Log("DrawBallLabel: Text drawn.");
+	Log("DrawBallLabel: Text drawn.");
 }
 
 // sanity-check for team id
 BOOL GoodTeamId(WORD id)
 {
 	//TRACE2("GoodTeamId: checking id = %04x", id);
+	LogWithNumber("GoodTeamId: checking id = %04x", id);
 	return (id>=0 && id<256);
 }
 
@@ -800,7 +1030,7 @@ void DrawKitLabels(IDirect3DDevice8* dev)
 
 	WORD id = 0xffff;
 	WORD kitId = 0xffff;
-	BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+	BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 
 	// HOME PLAYER
 	ZeroMemory(buf, 255);
@@ -890,7 +1120,7 @@ void DrawKitLabels(IDirect3DDevice8* dev)
 		g_font->DrawText( g_bbWidth/2 + 15,  POSY + IHEIGHT + 50, color, buf);
 	}
 
-	//Log("DrawKitLabels: Text drawn.");
+	Log("DrawKitLabels: Text drawn.");
 }
 
 /* New Reset function */
@@ -923,6 +1153,7 @@ IDirect3DDevice8* self, D3DPRESENT_PARAMETERS* params)
 	HRESULT res = g_orgReset(self, params);
 
 	TRACE("JuceReset: Reset() is done. About to return.");
+	Log("JuceReset: Reset() is done. About to return.");
 	return res;
 }
 
@@ -932,6 +1163,7 @@ IDirect3DDevice8* self, D3DPRESENT_PARAMETERS* params)
 void GetBackBufferInfo(IDirect3DDevice8* d3dDevice)
 {
 	TRACE("GetBackBufferInfo: called.");
+	Log("GetBackBufferInfo: called.");
 
 	// get the 0th backbuffer.
 	if (SUCCEEDED(d3dDevice->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &g_backBuffer)))
@@ -978,12 +1210,14 @@ void GetBackBufferInfo(IDirect3DDevice8* d3dDevice)
  */
 int GetKitSlot(int kitId)
 {
+	Log("Starting GetKitSlot");
 	int slot = -1;
 	for (int i=0; i<4; i++) 
 	{
-		WORD id = *((WORD*)(data[KIT_SLOTS] + i*0x38 + 0x0a));
+		WORD id = *((WORD*)(dta[KIT_SLOTS] + i*0x38 + 0x0a));
 		if (kitId == id) { slot = i; break; }
 	}
+	LogWithNumber("GetKitSlot: slot = %08x", (DWORD)slot);
 	return slot;
 }
 
@@ -1020,7 +1254,7 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 	if (g_triggerLoad3rdKit > 0)
 	{
 		int kitId = 0, slot = -1;
-		BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+		BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 
 		switch (g_triggerLoad3rdKit)
 		{
@@ -1031,9 +1265,9 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 				slot = GetKitSlot(kitId);
 				if (slot != -1)
 				{
-					ZeroMemory((BYTE*)data[KIT_SLOTS] + slot * 0x38, 0x38);
+					ZeroMemory((BYTE*)dta[KIT_SLOTS] + slot * 0x38, 0x38);
 					// set uni-reload flag
-					*((DWORD*)data[KIT_CHECK_TRIGGER]) = 1;
+					*((DWORD*)dta[KIT_CHECK_TRIGGER]) = 1;
 				}
 				break;
 
@@ -1044,9 +1278,9 @@ IDirect3DDevice8* self, CONST RECT* src, CONST RECT* dest, HWND hWnd, LPVOID unu
 				slot = GetKitSlot(kitId);
 				if (slot != -1)
 				{
-					ZeroMemory((BYTE*)data[KIT_SLOTS] + slot * 0x38, 0x38);
+					ZeroMemory((BYTE*)dta[KIT_SLOTS] + slot * 0x38, 0x38);
 					// set uni-reload flag
-					*((DWORD*)data[KIT_CHECK_TRIGGER]) = 1;
+					*((DWORD*)dta[KIT_CHECK_TRIGGER]) = 1;
 				}
 				break;
 		}
@@ -1255,6 +1489,7 @@ void InitKserv()
 			// create font instance
 			g_font = new CD3DFont( _T("Arial"), 10, D3DFONT_BOLD);
 			TRACE2("g_font = %08x" , (DWORD)g_font);
+			LogWithNumber("g_font = %08x" , (DWORD)g_font);
 			//ZeroMemory(g_ballName, 255);
 			//lstrcpy(g_ballName, "Default");
 		}
@@ -1279,7 +1514,7 @@ void InitKserv()
 	AFSITEMINFO itemInfo[256*5]; // each team has 5 kit-files.
 	ZeroMemory(itemInfo, sizeof(AFSITEMINFO) * 5 * 256);
 
-	g_numTeams = data[NUMTEAMS];
+	g_numTeams = dta[NUMTEAMS];
 
 	Log("Calculating kit offsets");
 	DWORD result = GetKitInfo(g_afsFileName, itemInfo, g_numTeams * 5);
@@ -1293,6 +1528,8 @@ void InitKserv()
 		sprintf(g_teamInfo[i].paFile, "uni%03dpa.bin", i);
 		sprintf(g_teamInfo[i].pbFile, "uni%03dpb.bin", i);
 		sprintf(g_teamInfo[i].vgFile, "uni%03dvg.bin", i);
+		LogWithNumber("The uniga index is: %08x", (DWORD)i); 
+		LogWithNumber("The uniga offset is: %08x", itemInfo[i*5].dwOffset); 
 
 		memcpy(&(g_teamInfo[i].ga), &(itemInfo[i*5]), sizeof(AFSITEMINFO));
 		memcpy(&(g_teamInfo[i].gb), &(itemInfo[i*5 + 1]), sizeof(AFSITEMINFO));
@@ -1316,30 +1553,78 @@ void InitKserv()
 	TRACE2("top: %08x", g_teamInfo[0].ga.dwOffset);
 	TRACE2("btm: %08x", g_teamInfo[g_numTeams-1].vg.dwOffset);
 
+	LogWithNumber("The bibs offset is: %08x", g_bibs.dwOffset); 
+
+	LogWithNumber("top: %08x", g_teamInfo[0].ga.dwOffset);
+	LogWithNumber("btm: %08x", g_teamInfo[g_numTeams-1].vg.dwOffset);
+
 	// set flag
 	g_teamOffsetsLoaded = TRUE;
-
-	// Determine ball model offsets
-	Log("Calculating ball model offsets");
-	for (int b=0; b<BALL_MDLS_COUNT; b++)
+	int ver = GetGameVersion();
+	int b;
+	if (ver == 5) //WE8IK
 	{
-		ZeroMemory(&g_ballMdls[b], sizeof(AFSITEMINFO));
-		result = GetItemInfo(g_afsFileName, ballMdls[b], &g_ballMdls[b], &base);
-		if (result != AFS_OK)
-			LogWithString("ERROR: %s", GetAfsErrorText(result));
-		TRACE2("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+		// Determine ball model offsets
+		Log("Calculating ball model offsets");
+		for (b=0; b<BALL_MDLS_COUNT_2; b++)
+		{
+			ZeroMemory(&g_ballMdls_2[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballMdls_2[b], &g_ballMdls_2[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball model offset is: %08x", g_ballMdls_2[b].dwOffset); 
+			LogWithNumber("ball model offset is: %08x", g_ballMdls_2[b].dwOffset); 
+		}
+		// Determine ball texture offsets
+		Log("Calculating ball texture offsets");
+		for (b=0; b<BALL_TEXS_COUNT_2; b++)
+		{
+			ZeroMemory(&g_ballTexs_2[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballTexs_2[b], &g_ballTexs_2[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball texture offset is: %08x", g_ballTexs_2[b].dwOffset); 
+			LogWithNumber("ball texture offset is: %08x", g_ballTexs_2[b].dwOffset); 
+		}
+
+	}
+	else
+	{
+		for (b=0; b<BALL_MDLS_COUNT; b++)
+		{
+			ZeroMemory(&g_ballMdls[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballMdls[b], &g_ballMdls[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+			LogWithNumber("ball model offset is: %08x", g_ballMdls[b].dwOffset); 
+		}
+		// Determine ball texture offsets
+		Log("Calculating ball texture offsets");
+		for (b=0; b<BALL_TEXS_COUNT; b++)
+		{
+			ZeroMemory(&g_ballTexs[b], sizeof(AFSITEMINFO));
+			result = GetItemInfo(g_afsFileName, ballTexs[b], &g_ballTexs[b], &base);
+			if (result != AFS_OK)
+				LogWithString("ERROR: %s", GetAfsErrorText(result));
+			TRACE2("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
+			LogWithNumber("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
+		}
+
 	}
 
-	// Determine ball texture offsets
-	Log("Calculating ball texture offsets");
-	for (b=0; b<BALL_TEXS_COUNT; b++)
+	// Determine adboards offsets
+	/*
+	for (b=0; b<ADBOARDS_COUNT; b++)
 	{
-		ZeroMemory(&g_ballTexs[b], sizeof(AFSITEMINFO));
-		result = GetItemInfo(g_afsFileName, ballTexs[b], &g_ballTexs[b], &base);
+		ZeroMemory(&g_adboardsTexs[b], sizeof(AFSITEMINFO));
+		result = GetItemInfo(g_afsFileName, adboardsTexs[b], &g_adboardsTexs[b], &base);
 		if (result != AFS_OK)
 			LogWithString("ERROR: %s", GetAfsErrorText(result));
-		TRACE2("ball texture offset is: %08x", g_ballTexs[b].dwOffset); 
+		TRACE2("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
+		LogWithNumber("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
 	}
+	*/
 
 	Log("Calculating etc_ee_tex.bin offset");
 	ZeroMemory(&g_etcEeTex, sizeof(AFSITEMINFO));
@@ -1366,6 +1651,23 @@ void InitKserv()
        HookAPICalls( &Kernel32Hook );
     }
     LogWithDouble("game.speed = %0.2f", (double)g_config.gameSpeed);
+	FixReservedMemory();
+	if (
+	(g_config.lod1 >= 0 && g_config.lod1 < 5) &&
+	(g_config.lod2 >= 0 && g_config.lod2 < 5) &&
+	(g_config.lod3 >= 0 && g_config.lod3 < 5) &&
+	(g_config.lod4 >= 0 && g_config.lod4 < 5) &&
+	(g_config.lod5 >= 0 && g_config.lod5 < 5)
+	)
+	{
+		SetLodLevel();
+	}
+	else
+	{
+		Log("Wrong values for LOD Mixer");
+	}
+	SetCameraData();
+	SetMLData();
 }
 
 BOOL WINAPI Override_QueryPerformanceFrequency(
@@ -1404,6 +1706,7 @@ IDirect3D8* STDMETHODCALLTYPE JuceDirect3DCreate8(UINT sdkVersion)
 
 	// call the original function.
 	IDirect3D8* result = g_orgDirect3DCreate8(sdkVersion);
+	Log("JuceDirect3DCreate8 returned.");
 
 	return result;
 }
@@ -1481,6 +1784,22 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 
 		Log("Log started.");
 		LogWithNumber("g_config.debug = %d", g_config.debug);
+
+		// read camera configuration
+		char cameraCfgFile[BUFLEN];
+		ZeroMemory(cameraCfgFile, BUFLEN);
+		lstrcpy(cameraCfgFile, mydir); 
+		lstrcat(cameraCfgFile, CAMERA_CONFIG_FILE);
+
+		ReadCameraConfig(&g_camera_config, cameraCfgFile);
+
+		// read ml configuration
+		char mlCfgFile[BUFLEN];
+		ZeroMemory(mlCfgFile, BUFLEN);
+		lstrcpy(mlCfgFile, mydir); 
+		lstrcat(mlCfgFile, ML_CONFIG_FILE);
+
+		ReadMLConfig(&g_ml_config, mlCfgFile);
 
 		// Put a JMP-hook on Direct3DCreate8
 		Log("JMP-hooking Direct3DCreate8...");
@@ -1664,7 +1983,7 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 // returns TRUE if specified slot contains edited kit.
 BOOL IsEditedKit(int slot) 
 {
-	KitSlot* kitSlot = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + slot*sizeof(KitSlot));
+	KitSlot* kitSlot = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + slot*sizeof(KitSlot));
 	return kitSlot->isEdited;
 }
 
@@ -1690,7 +2009,7 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 					g_triggerLoad3rdKit = 1;
 
 					// pick next extra kit
-					BYTE strip = ((BYTE*)data[TEAM_STRIPS])[0];
+					BYTE strip = ((BYTE*)dta[TEAM_STRIPS])[0];
 					int kitId = (strip & 0x01) ? g_currTeams[0] * 5 + 3 : g_currTeams[0] * 5 + 2;
 					g_kitExtras[kitId] = (g_kitExtras[kitId] == NULL) ? 
 						kDB->players[g_currTeams[0]].extra : g_kitExtras[kitId]->next;
@@ -1700,7 +2019,7 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 					g_triggerLoad3rdKit = 2;
 
 					// pick next extra kit
-					BYTE strip = ((BYTE*)data[TEAM_STRIPS])[1];
+					BYTE strip = ((BYTE*)dta[TEAM_STRIPS])[1];
 					int kitId = (strip & 0x01) ? g_currTeams[1] * 5 + 3 : g_currTeams[1] * 5 + 2;
 					g_kitExtras[kitId] = (g_kitExtras[kitId] == NULL) ? 
 						kDB->players[g_currTeams[1]].extra : g_kitExtras[kitId]->next;
@@ -1732,8 +2051,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyNextBall)
 				{
@@ -1742,8 +2063,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyRandomBall)
 				{
@@ -1759,8 +2082,10 @@ EXTERN_C _declspec(dllexport) LRESULT CALLBACK KeyboardProc(int code, WPARAM wPa
 
 					// load ball
 					FreeBall();
+					FreeStad();
 					if (g_balls != NULL && g_balls->ball != NULL)
 						LoadBall(g_balls->ball);
+						//LoadStad();
 				}
 				else if (wParam == g_config.vKeyResetBall)
 				{
@@ -1859,6 +2184,7 @@ void LoadKDB()
 
 		// initialize ball-cycle
 		FreeBall(); // free any currently loaded ball
+		FreeStad();
 		g_balls = NULL;
 
 		TRACE("KDB loaded.");
@@ -2180,7 +2506,8 @@ void ApplyBallTexture(BYTE* orgBall, BYTE* ballTex)
 BOOL SignExists(DWORD sig, char* filename)
 {
 	int k = -1;
-	for (int i=0; i<8; i++)
+	int i;
+	for (i=0; i<8; i++)
 		if (sig == g_sign[i]) { k = i; break; }
 
 	if (k == -1) return FALSE; // not found
@@ -2229,8 +2556,8 @@ UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool, IDirect3DTexture8** pp
     if (!_internalResSet) {
         _internalResSet = true;
         if (g_config.internalResolutionWidth > 0 && g_config.internalResolutionHeight > 0) {
-            DWORD *w = (DWORD*)data[INTRES_WIDTH];
-            DWORD *h = (DWORD*)data[INTRES_HEIGHT];
+            DWORD *w = (DWORD*)dta[INTRES_WIDTH];
+            DWORD *h = (DWORD*)dta[INTRES_HEIGHT];
             if (w != NULL && h != NULL) {
                 *w = g_config.internalResolutionWidth;
                 *h = g_config.internalResolutionHeight;
@@ -2442,11 +2769,12 @@ DWORD STDMETHODCALLTYPE JuceSetFilePointer(HANDLE handle, LONG offset, PLONG upp
 	if (g_device == NULL)
 	{
 		// try to hook device methods
-		DWORD* pdev = (DWORD*)(*((DWORD*)data[IDIRECT3DDEVICE8]));
+		DWORD* pdev = (DWORD*)(*((DWORD*)dta[IDIRECT3DDEVICE8]));
 		if (pdev != 0)
 		{
 			g_device = (IDirect3DDevice8*)pdev;
 			TRACE2("g_device = %08x", (DWORD)g_device);
+			LogWithNumber("g_device = %08x", (DWORD)g_device);
 
 			DWORD* vtable = (DWORD*)(*((DWORD*)g_device));
 
@@ -2456,6 +2784,8 @@ DWORD STDMETHODCALLTYPE JuceSetFilePointer(HANDLE handle, LONG offset, PLONG upp
 
 			TRACE2("g_orgCreateTexture = %08x", (DWORD)g_orgCreateTexture);
 			TRACE2("JuceCreateTexture = %08x", (DWORD)JuceCreateTexture);
+			LogWithNumber("g_orgCreateTexture = %08x", (DWORD)g_orgCreateTexture);
+			LogWithNumber("JuceCreateTexture = %08x", (DWORD)JuceCreateTexture);
 
 			// hook Present method
 			g_orgReset = (PFNRESETPROC)vtable[14];
@@ -2531,16 +2861,21 @@ DWORD STDMETHODCALLTYPE JuceSetFilePointer(HANDLE handle, LONG offset, PLONG upp
 		// see if this is a kit BIN about to be read
 		if (IsKitOffset(offset))
 		{
+			LogWithNumber("JuceSetFilePointer: previous g_kitOffset = %08x", (DWORD)offset);
 			g_kitOffset = offset;
 			TRACE2("JuceSetFilePointer: new g_kitOffset = %08x", (DWORD)offset);
+			LogWithNumber("JuceSetFilePointer: new g_kitOffset = %08x", (DWORD)offset);
 		}
 	}
 	TRACE2("JuceSetFilePointer: offset = %08x", (DWORD)offset);
+	LogWithNumber("JuceSetFilePointer: offset = %08x", (DWORD)offset);
 
 	// TEMP.test
 	if (offset == g_etcEeTex.dwOffset)
 	{
 		Log("JuceSetFilePointer: etc_ee_tex.bin is being loaded.");
+		TRACE2("JuceSetFilePointer: offset for etc_ee_tex.bin = %08x", (DWORD)offset);
+		LogWithNumber("JuceSetFilePointer: offset for etc_ee_tex.bin = %08x", (DWORD)offset);
 	}
 
 	return SetFilePointer(handle, offset, upper32, method);
@@ -2550,6 +2885,8 @@ DWORD JuceUniDecrypt(DWORD addr, DWORD size)
 {
 	TRACE("JuceUniDecrypt: CALLED.");
 	TRACE2("JuceUniDecode: addr = %08x", addr);
+	Log("JuceUniDecrypt: CALLED.");
+	TRACE2("JuceUniDecode: addr = %08x", addr);
 
 	DWORD result = UniDecrypt(addr, size);
 
@@ -2557,10 +2894,27 @@ DWORD JuceUniDecrypt(DWORD addr, DWORD size)
 }
 
 // helper function
+BOOL IsAdboardTexOffset(DWORD offset)
+{
+	for (int i=0; i<ADBOARDS_COUNT; i++)
+		if (g_adboardsTexs[i].dwOffset == offset) return true;
+	return false;
+}
+
+// helper function
 BOOL IsBallModelOffset(DWORD offset)
 {
-	for (int i=0; i<BALL_MDLS_COUNT; i++)
-		if (g_ballMdls[i].dwOffset == offset) return true;
+	int v = GetGameVersion();
+	if (v ==5)
+	{
+		for (int i=0; i<BALL_MDLS_COUNT_2; i++)
+			if (g_ballMdls_2[i].dwOffset == offset) return true;
+	}
+	else
+	{
+		for (int i=0; i<BALL_MDLS_COUNT; i++)
+			if (g_ballMdls[i].dwOffset == offset) return true;
+	}
 
 	return false;
 }
@@ -2568,8 +2922,18 @@ BOOL IsBallModelOffset(DWORD offset)
 // helper function
 BOOL IsBallTextureOffset(DWORD offset)
 {
+	int v = GetGameVersion();
+	if (v ==5)
+	{
+		for (int i=0; i<BALL_TEXS_COUNT_2; i++)
+			if (g_ballTexs_2[i].dwOffset == offset) return true;
+
+	}
+	else
+	{
 	for (int i=0; i<BALL_TEXS_COUNT; i++)
 		if (g_ballTexs[i].dwOffset == offset) return true;
+	}
 
 	return false;
 }
@@ -2584,7 +2948,7 @@ BOOL IsBallTextureOffset(DWORD offset)
  */
 DWORD JuceUnpack(DWORD addr1, DWORD addr2, DWORD size1, DWORD size2)
 {
-	TRACE2("JuceUnpack: CALLED (afs file offset = %08x).", g_offset);
+	LogWithNumber("JuceUnpack: CALLED (afs file offset = %08x).", g_offset);
 	BOOL isBallTex = FALSE;
 
 	if (IsBallModelOffset(g_offset) && g_ballMdl != NULL)
@@ -2595,6 +2959,15 @@ DWORD JuceUnpack(DWORD addr1, DWORD addr2, DWORD size1, DWORD size2)
 		addr1 = (DWORD)g_ballMdl + sizeof(ENCBUFFERHEADER);
 		size1 = ((ENCBUFFERHEADER*)g_ballMdl)->dwEncSize;
 		size2 = ((ENCBUFFERHEADER*)g_ballMdl)->dwDecSize;
+	}
+	if (IsAdboardTexOffset(g_offset) && g_adboardTex != NULL)
+	{
+		Log("JuceUnpack: unpacking adboard texture");
+
+		// swap source buffer and sizes
+		addr1 = (DWORD)g_adboardTex + sizeof(ENCBUFFERHEADER);
+		size1 = ((ENCBUFFERHEADER*)g_adboardTex)->dwEncSize;
+		size2 = ((ENCBUFFERHEADER*)g_adboardTex)->dwDecSize;
 	}
 	else 
 	{
@@ -2626,7 +2999,8 @@ DWORD JuceUnpack(DWORD addr1, DWORD addr2, DWORD size1, DWORD size2)
 		//DumpData((BYTE*)addr2, size2);
 		//DumpBall((BYTE*)addr2);
 	}
-
+	
+	Log("JuceUnpack: Finishing");
 	return result;
 }
 
@@ -2668,6 +3042,14 @@ DWORD JuceAllocMem(DWORD infoBlock, DWORD param2, DWORD size)
 			TRACE2("JuceAllocMem: requesting size: %08x", size);
 		}
 	}
+	else if (IsAdboardTexOffset(g_offset) && g_adboardTex != NULL)
+	{
+		LogWithNumber("JuceAllocMem: adboard-tex: Size needed: %08x", size);
+		// overwrite size
+		ENCBUFFERHEADER* header = (ENCBUFFERHEADER*)g_adboardTex;
+		size = header->dwDecSize;
+		LogWithNumber("JuceAllocMem: requesting size: %08x", size);
+	}
 
 	// call the target function
 	DWORD result = AllocMem(infoBlock, param2, size);
@@ -2683,8 +3065,8 @@ DWORD JuceResetFlags(DWORD index)
 	DWORD result = ResetFlags(index);
 
 	// clear out the slots
-	ZeroMemory((BYTE*)data[KIT_SLOTS], 0x38 * 4);
-	ZeroMemory((BYTE*)data[ANOTHER_KIT_SLOTS], sizeof(KitSlot) * 4);
+	ZeroMemory((BYTE*)dta[KIT_SLOTS], 0x38 * 4);
+	ZeroMemory((BYTE*)dta[ANOTHER_KIT_SLOTS], sizeof(KitSlot) * 4);
 
 	return result;
 }
@@ -2732,15 +3114,16 @@ DWORD FindKitId(DWORD offset, DWORD* size)
  */
 DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 {
+	Log("Starting JuceUniDecode");
     if (!_aspectRatioSet) {
         // adjust aspect ratio
-        if (data[PROJ_W] && data[CULL_W] && g_config.aspectRatio >0.0f) {
+        if (dta[PROJ_W] && dta[CULL_W] && g_config.aspectRatio >0.0f) {
             LogWithDouble("Setting aspect-ratio: %0.4f", 
                     (double)g_config.aspectRatio);
             float factor = g_config.aspectRatio / (512.0/384.0);
 
             DWORD newProtection = PAGE_EXECUTE_READWRITE;
-            float* ar_p = (float*)data[PROJ_W];
+            float* ar_p = (float*)dta[PROJ_W];
             if (VirtualProtect(ar_p,4,newProtection,&g_savedProtection)) {
                 *ar_p = 512.0*factor;
                 LogWithDouble("PROJECTION_W: %0.2f", (double)*ar_p);
@@ -2748,7 +3131,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
             else {
                 Log("FAILED to change aspect-ratio (PROJECTION)");
             }
-            DWORD* ar_c = (DWORD*)data[CULL_W];
+            DWORD* ar_c = (DWORD*)dta[CULL_W];
             if (VirtualProtect(ar_c,4,newProtection,&g_savedProtection)) {
                 *ar_c = (int)(512*factor)+1;
                 LogWithNumber("CULLING_W: %d", *ar_c);
@@ -2783,7 +3166,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 	// find corresponding file
 	char fileClue[BUFLEN];
 	ZeroMemory(fileClue, BUFLEN);
-	WORD* teams = (WORD*)data[TEAM_IDS];
+	WORD* teams = (WORD*)dta[TEAM_IDS];
 
 	BOOL found = FALSE;
 	g_isBibs = FALSE;
@@ -2887,7 +3270,7 @@ DWORD JuceUniDecode(DWORD addr1, DWORD addr2, DWORD size)
 int GetGameVersion(void)
 {
 	HMODULE hMod = GetModuleHandle(NULL);
-	for (int i=0; i<5; i++)
+	for (int i=0; i<NUM_GUIDS; i++)
 	{
 		char* guid = (char*)((DWORD)hMod + GAME_GUID_OFFSETS[i]);
 		if (strncmp(guid, GAME_GUID[i], lstrlen(GAME_GUID[i]))==0)
@@ -2901,7 +3284,7 @@ void Initialize(int v)
 {
 	// select correct addresses
 	memcpy(code, codeArray[v], sizeof(code));
-	memcpy(data, dataArray[v], sizeof(data));
+	memcpy(dta, dtaArray[v], sizeof(dta));
 
 	// assign pointers
 	UniDecrypt = (UNIDECRYPT)code[C_UNIDECRYPT];
@@ -2980,9 +3363,10 @@ HRESULT SaveAs8bitBMP(char* filename, BYTE* buf, BYTE* pal, LONG width, LONG hei
 		WriteFile(hFile, &infoheader, sizeof(infoheader), (LPDWORD)&wbytes, NULL);
 
 		// write palette
+		int i;
 		for (int bank=0; bank<8; bank++)
 		{
-			for (int i=0; i<8; i++)
+			for (i=0; i<8; i++)
 			{
 				WriteFile(hFile, pal + bank*32*4 + i*4 + 2, 1, (LPDWORD)&wbytes, NULL);
 				WriteFile(hFile, pal + bank*32*4 + i*4 + 1, 1, (LPDWORD)&wbytes, NULL);
@@ -3319,7 +3703,7 @@ TeamAttr* utilGetTeamAttr(WORD id)
 	if (id < 0 || id > 255)
 		return NULL;
 
-	DWORD teamAttrBase = *((DWORD*)data[TEAM_COLLARS_PTR]);
+	DWORD teamAttrBase = *((DWORD*)dta[TEAM_COLLARS_PTR]);
 	return (TeamAttr*)(teamAttrBase + id*sizeof(TeamAttr));
 }
 
@@ -3362,7 +3746,8 @@ DWORD JuceCommonSetKitAttributes(DWORD n, BOOL useN)
 
 	// save the team attributes here
 	TeamAttr saveTeamAttr[2];
-	for (int k=0; k<2; k++) {
+	int k;
+	for (k=0; k<2; k++) {
 		BOOL customTeam = IS_CUSTOM_TEAM(g_currTeams[k]);
 		if (customTeam)
 			continue;
@@ -3434,11 +3819,11 @@ DWORD JuceCommonSetKitAttributes(DWORD n, BOOL useN)
 	if (!customTeam)
 	{
 		// PLAYER
-		BYTE* strips = (BYTE*)data[TEAM_STRIPS];
+		BYTE* strips = (BYTE*)dta[TEAM_STRIPS];
 		WORD kitId = g_currTeams[index] * 5 + ((strips[index] & 0x01) != 0) + 2;
 		Kit* kit = utilGetKit(kitId);
 
-		KitSlot* kitSlots = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + index*sizeof(KitSlot)*2);
+		KitSlot* kitSlots = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + index*sizeof(KitSlot)*2);
 
 		if (kit != NULL && !kitSlots[1].isEdited)
 		{
@@ -3498,6 +3883,7 @@ DWORD JuceCommonSetKitAttributes(DWORD n, BOOL useN)
 DWORD JuceFinalSetKitAttributes(DWORD n)
 {
 	TRACE2("JuceFinalSetKitAttributes CALLED: n = %d", n);
+	LogWithNumber("JuceFinalSetKitAttributes CALLED: n = %d", n);
 
 	DWORD result = JuceCommonSetKitAttributes(n, TRUE);
 
@@ -3507,13 +3893,13 @@ DWORD JuceFinalSetKitAttributes(DWORD n)
 		int takenSlots[2] = {-1, -1};
 		for (int i=0; i<2; i++)
 		{
-			KitSlot* kitSlot = (KitSlot*)(data[ANOTHER_KIT_SLOTS] + i*2*sizeof(KitSlot) + sizeof(KitSlot));
+			KitSlot* kitSlot = (KitSlot*)(dta[ANOTHER_KIT_SLOTS] + i*2*sizeof(KitSlot) + sizeof(KitSlot));
 			takenSlots[i] = GetKitSlot(kitSlot->kitId);
 		}
 		for (int k=0; k<4; k++)
 		{
 			if (k == takenSlots[0] || k == takenSlots[1]) continue;
-			ZeroMemory((BYTE*)data[KIT_SLOTS] + k * 0x38, 0x38);
+			ZeroMemory((BYTE*)dta[KIT_SLOTS] + k * 0x38, 0x38);
 			TRACE2("JuceFinalSetKitAttributes: slot #%d cleared.", k);
 		}
 		TRACE("JuceFinalSetKitAttributes: unused slots cleared.");
@@ -3563,6 +3949,7 @@ DWORD JuceKitPickSetKitAttributes(DWORD n)
 DWORD JuceEditModeSetKitAttributes(DWORD n)
 {
 	TRACE2("JuceEditModeSetKitAttributes CALLED: n = %d", n);
+	LogWithNumber("JuceEditModeSetKitAttributes CALLED: n = %d", n);
 
 	VerifyTeams();
 	BOOL customTeam = IS_CUSTOM_TEAM(g_currTeams[0]);
@@ -3587,7 +3974,7 @@ DWORD JuceEditModeSetKitAttributes(DWORD n)
 void VerifyTeams()
 {
 	g_currTeams[0] = g_currTeams[1] = 0xffff;
-	WORD* teams = (WORD*)data[TEAM_IDS];
+	WORD* teams = (WORD*)dta[TEAM_IDS];
 
 	// try to define both teams.
 	if (teams[0] >=0 && teams[0] <= g_numTeams) g_currTeams[0] = teams[0];
@@ -3599,7 +3986,7 @@ void VerifyTeams()
 		int which = (teams[0] == 0x0122) ? 1 : 0;
 
 		// looks like it's an ML team.
-		DWORD* mlPtrs = (DWORD*)data[MLDATA_PTRS];
+		DWORD* mlPtrs = (DWORD*)dta[MLDATA_PTRS];
 		if (mlPtrs[which] != NULL)
 		{
 			WORD* mlData = (WORD*)(mlPtrs[which] + 0x278);
@@ -3615,7 +4002,7 @@ void VerifyTeams()
 		int which = (teams[1] == 0x0122) ? 1 : 0;
 
 		// looks like it's an ML team.
-		DWORD* mlPtrs = (DWORD*)data[MLDATA_PTRS];
+		DWORD* mlPtrs = (DWORD*)dta[MLDATA_PTRS];
 		if (mlPtrs[which] != NULL)
 		{
 			WORD* mlData = (WORD*)(mlPtrs[which] + 0x278);
@@ -3626,3 +4013,167 @@ void VerifyTeams()
 	}
 }
 
+
+// This function will enforce reserved memory of the game
+// Will allow to use better textures quality
+void FixReservedMemory()
+{
+    DWORD protection;
+    DWORD newProtection = PAGE_EXECUTE_READWRITE;
+
+    // increase Reserved memory
+    if (g_config.newResMem > 0) {
+        if (code[C_RESMEM1] && code[C_RESMEM2] && code[C_RESMEM3]) {
+            DWORD *c1 = (DWORD*)code[C_RESMEM1];
+            DWORD *c2 = (DWORD*)code[C_RESMEM2];
+            DWORD *c3 = (DWORD*)code[C_RESMEM3];
+            if (VirtualProtect(c1-8, 0x100, newProtection, &protection)) {
+                DWORD currMem = *c1;
+                LogWithNumber("Reserved memory was: %d bytes", *c1);
+                if (*c1 < g_config.newResMem) {
+                    *c1 = g_config.newResMem;
+                    *c2 = g_config.newResMem >> 2;
+                    *c3 = g_config.newResMem;
+                }
+                LogWithNumber("Reserved memory now: %d bytes", *c1);
+            }
+            else {
+                Log("Unable to increase reserved memory: VirtualProtect failed");
+            }
+        }
+    }
+}
+
+DWORD GetLodLevel(int selection)
+{
+	switch (selection) {
+	case 0:
+	  return dta[LOD_VALUE_0];
+	case 1:
+	  return dta[LOD_VALUE_1];
+	case 2:
+	  return dta[LOD_VALUE_2];
+	case 3:
+	  return dta[LOD_VALUE_3];
+	case 4:
+	  return dta[LOD_VALUE_4];
+	default: 
+	  return dta[LOD_VALUE_0];
+	}
+	
+}
+
+void SetLodLevel()
+{
+    if (dta[LOD_TABLE]) 
+	{
+        DWORD protection = 0;
+        DWORD newProtection = PAGE_EXECUTE_READWRITE;
+        DWORD* addr = (DWORD*)dta[LOD_TABLE];
+        if (VirtualProtect(addr, 4*5, newProtection, &protection))
+        {
+            addr[0] = GetLodLevel(g_config.lod1);
+            addr[1] = GetLodLevel(g_config.lod2);
+            addr[2] = GetLodLevel(g_config.lod3);
+            addr[3] = GetLodLevel(g_config.lod4);
+            addr[4] = GetLodLevel(g_config.lod5);
+            
+            char buf[80]; ZeroMemory(buf, 80);
+            sprintf(buf, "Lod levels set to %08x,%08x,%08x,%08x,%08x.",
+                    GetLodLevel(g_config.lod1), GetLodLevel(g_config.lod2), GetLodLevel(g_config.lod3),
+                    GetLodLevel(g_config.lod4), GetLodLevel(g_config.lod5));
+            Log(buf);
+        }
+		else
+			Log("Unable to set new LOD values: VirtualProtect failed");
+    };
+}
+
+void SetCameraData()
+{
+	DWORD protection = 0;
+	DWORD newProtection = PAGE_EXECUTE_READWRITE;
+	DWORD addStadRoof = 0xbf800000;
+	
+    if (dta[CAMERA_ZOOM] && g_camera_config.zoom>0.0f) 
+	{
+        DWORD* addr = (DWORD*)dta[CAMERA_ZOOM];
+        if (VirtualProtect(addr, sizeof(float), newProtection, &protection))
+        {
+            *(float*)addr = (float)(g_camera_config.zoom);
+            
+            char buf[80]; ZeroMemory(buf, 80);
+            sprintf(buf, "Camera Zoom set to %0.1f",
+                    (float)(g_camera_config.zoom));
+            Log(buf);
+        }
+		else
+			Log("Problem setting camera zoom: VirtualProtect failed");
+    };
+	if (dta[FIX_STAD_CLIPPING] && g_camera_config.fixStadiumClip)
+	{
+        DWORD* addr = (DWORD*)dta[FIX_STAD_CLIPPING];
+        if (VirtualProtect(addr, 0x320, newProtection, &protection))
+        {
+            *(BYTE*)addr = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x4f) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x17e) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x195) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x225) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ce) = (BYTE)0xEB;
+
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2eb) = (BYTE)0x90;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ec) = (BYTE)0x90;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ed) = (BYTE)0x90;
+            Log("Stadium clipping fixed correctly");
+        }
+		else
+			Log("Problem fixing stadium clipping: VirtualProtect failed");
+
+	}
+	if (dta[ADD_STAD_ROOF] && g_camera_config.addStadiumRoof)
+	{
+        DWORD* addr = (DWORD*)dta[ADD_STAD_ROOF];
+        if (VirtualProtect(addr, sizeof(DWORD), newProtection, &protection))
+        {
+            *(DWORD*)addr = (DWORD)addStadRoof;
+            Log("Stadium roof added correctly");
+        }
+		else
+			Log("Problem adding stadium roof: VirtualProtect failed");
+
+	}
+}
+
+
+void SetMLData()
+{
+	DWORD protection = 0;
+	DWORD newProtection = PAGE_EXECUTE_READWRITE;
+	
+    if (
+		dta[ML_START_YEAR_1] && 
+		dta[ML_START_YEAR_2] && 
+		dta[ML_START_YEAR_3] && 
+		dta[ML_START_YEAR_4] && 
+		dta[ML_START_YEAR_5] && 
+		dta[ML_START_YEAR_6] && 
+		g_ml_config.mlStartingYear>0
+	)
+	{
+		int i;
+		for (i=0; i<6; i++)
+		{
+			DWORD* addr = (DWORD*)dta[ML_START_YEAR_1 + i];
+			if (VirtualProtect(addr, sizeof(DWORD), newProtection, &protection))
+			{
+				*(DWORD*)addr = (DWORD)(g_ml_config.mlStartingYear);
+				LogWithTwoNumbers("ML Starting year set to : %d at address: %08x", g_ml_config.mlStartingYear, (DWORD)addr);
+
+			}
+			else
+				Log("Problem setting camera zoom: VirtualProtect failed");
+		}
+    };
+
+}

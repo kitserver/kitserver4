@@ -24,6 +24,8 @@
 #define DEFAULT_INTRES_HEIGHT 0
 #define DEFAULT_FULLSCREEN_WIDTH 0
 #define DEFAULT_FULLSCREEN_HEIGHT 0
+#define DEFAULT_RESERVED_MEMORY 0
+#define DEFAULT_LOD -1
 
 typedef struct _KSERV_CONFIG_STRUCT {
 	DWORD  debug;
@@ -43,10 +45,41 @@ typedef struct _KSERV_CONFIG_STRUCT {
     DWORD  internalResolutionHeight;
     DWORD  fullscreenWidth;
     DWORD  fullscreenHeight;
+	DWORD  newResMem;
+	int    lod1;
+	int    lod2;
+	int    lod3;
+	int    lod4;
+	int    lod5;
 
 } KSERV_CONFIG;
 
+#define CAMERA_CONFIG_FILE "camerazoomer.cfg"
+#define DEFAULT_ZOOM 1430.0f
+#define DEFAULT_FIX_CLIP 0
+#define DEFAULT_ADD_ROOF 0
+
+typedef struct _CAMERA_CONFIG_STRUCT {
+	DWORD debug;
+    float zoom;
+	DWORD fixStadiumClip;
+	DWORD addStadiumRoof;
+	
+} CAMERA_CONFIG;
+
+#define ML_CONFIG_FILE "ml.cfg"
+#define DEFAULT_STARTING_YEAR 2003
+
+typedef struct _ML_CONFIG_STRUCT {
+	DWORD debug;
+	DWORD mlStartingYear;
+	
+} ML_CONFIG;
+
+
 BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile);
 BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile);
+BOOL ReadCameraConfig(CAMERA_CONFIG* config, char* cfgFile);
+BOOL ReadMLConfig(ML_CONFIG* config, char* cfgFile);
 
 #endif

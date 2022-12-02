@@ -27,7 +27,7 @@ DWORD LoadLibraryAddr[] = {
 void MyMessageBox(char* fmt, DWORD value);
 void MyMessageBox2(char* fmt, char* value);
 
-#define NUM_GUIDS 5
+#define NUM_GUIDS 6
 extern char* GAME[NUM_GUIDS + 1];
 extern char* GAME_GUID[NUM_GUIDS];
 extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
@@ -65,7 +65,7 @@ int GetGameVersion(char* filename)
 		return -1;
 
 	// check for regular exes
-	for (int i=0; i<5; i++)
+	for (int i=0; i<NUM_GUIDS; i++)
 	{
 		fseek(f, GAME_GUID_OFFSETS[i], SEEK_SET);
 		fread(guid, lstrlen(GAME_GUID[i]), 1, f);

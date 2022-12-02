@@ -88,6 +88,22 @@ void LogWithString(char *msg, char* str)
 	}
 }
 
+// Simple logger 5
+void LogWithTwoNumbers(char *msg, DWORD a, DWORD b)
+{
+	if (g_config.debug < 1) return;
+	char buf[BUFLEN];
+	DWORD wbytes;
+	if (mylog != INVALID_HANDLE_VALUE) 
+	{
+		ZeroMemory(buf, BUFLEN);
+		sprintf(buf, msg, a, b);
+		WriteFile(mylog, (LPVOID)buf, lstrlen(buf), (LPDWORD)&wbytes, NULL);
+		WriteFile(mylog, (LPVOID)"\r\n", 2, (LPDWORD)&wbytes, NULL);
+	}
+}
+
+
 // Simple debugging logger
 void Debug(char *msg)
 {
@@ -145,7 +161,7 @@ void DebugWithString(char *msg, char* str)
 	}
 }
 
-// Simple debugging logger
+// Simple debugging logger 5
 void DebugWithThreeNumbers(char *msg, DWORD a, DWORD b, DWORD c)
 {
 	if (g_config.debug < 2) return;
@@ -155,6 +171,21 @@ void DebugWithThreeNumbers(char *msg, DWORD a, DWORD b, DWORD c)
 	{
 		ZeroMemory(buf, BUFLEN);
 		sprintf(buf, msg, a, b, c);
+		WriteFile(mylog, (LPVOID)buf, lstrlen(buf), (LPDWORD)&wbytes, NULL);
+		WriteFile(mylog, (LPVOID)"\r\n", 2, (LPDWORD)&wbytes, NULL);
+	}
+}
+
+// Simple debugging logger 6
+void DebugWithTwoNumbers(char *msg, DWORD a, DWORD b)
+{
+	if (g_config.debug < 2) return;
+	char buf[BUFLEN];
+	DWORD wbytes;
+	if (mylog != INVALID_HANDLE_VALUE) 
+	{
+		ZeroMemory(buf, BUFLEN);
+		sprintf(buf, msg, a, b);
 		WriteFile(mylog, (LPVOID)buf, lstrlen(buf), (LPDWORD)&wbytes, NULL);
 		WriteFile(mylog, (LPVOID)"\r\n", 2, (LPDWORD)&wbytes, NULL);
 	}
