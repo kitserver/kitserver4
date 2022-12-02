@@ -71,6 +71,11 @@ CAMERA_CONFIG g_camera_config = {
 	DEFAULT_ADD_ROOF,
 };
 
+ML_CONFIG g_ml_config = {
+	DEFAULT_DEBUG,
+	DEFAULT_STARTING_YEAR,
+};
+
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
 
@@ -201,7 +206,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 };
 
 // data array names
-#define DATALEN 22
+#define DATALEN 28
 enum {
 	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
 	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
@@ -211,6 +216,8 @@ enum {
 	LOD_TABLE,
 	LOD_VALUE_0, LOD_VALUE_1, LOD_VALUE_2, LOD_VALUE_3, LOD_VALUE_4,
 	CAMERA_ZOOM, FIX_STAD_CLIPPING, ADD_STAD_ROOF,
+	ML_START_YEAR_1, ML_START_YEAR_2, ML_START_YEAR_3, 
+	ML_START_YEAR_4, ML_START_YEAR_5, ML_START_YEAR_6, 
 };
 
 
@@ -226,6 +233,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0,
 		0, 0, 0, 0, 0, 
 		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
 	},
 	// PES4 DEMO
 	{ 
@@ -236,6 +245,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0, 0,
 		0,
 		0, 0, 0, 0, 0, 
+		0, 0, 0,
+		0, 0, 0,
 		0, 0, 0,
 	},
 	// PES4 1.10
@@ -248,6 +259,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0xaca7e4,
 		9223296, 9223440, 9223584, 9223728, 9223872, 
 		0x45e58d, 0x676737, 0x9da8C8,
+		0x525fe2, 0x528d63, 0x52b57e,
+		0x52b584, 0x55bca1, 0x58df55,
 	},
 	// PES4 1.0
 	{ 
@@ -259,6 +272,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0xac87fc,
 		9219184, 9219328, 9219472, 9219616, 9219760, 
 		0x45e3ad, 0x6764A7, 0x9d9890,
+		0x525e72, 0x528bf3, 0x52b40e,
+		0x52b414, 0x55bb31, 0x58dde5,
 	},
 	// WE8I US
 	{ 
@@ -270,6 +285,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0xaca824,
 		9227168, 9227312, 9227456, 9227600, 9227744, 
 		0x45e55d, 0x676ed7, 0x9db600,
+		0x525fd2, 0x528a93, 0x52b2ae,
+		0x52b2b4, 0x55b9d1, 0x58dc85,
 	},
 	// WE8I K
 	{ 
@@ -281,6 +298,8 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x9e0068,
 		6775488, 6775632, 6775776, 6775920, 6776064, 
 		0x6d6f6d, 0x8bb417, 0x9ad584,
+		0x79ec52, 0x7a1713, 0x7a3f3e,
+		0x7a3f44, 0x7d48f1, 0x806685,
 	},
 
 
@@ -602,6 +621,7 @@ void LoadKDB();
 void FixReservedMemory(void);
 void SetLodLevel(void);
 void SetCameraData(void);
+void SetMLData(void);
 
 HRESULT SaveAs8bitBMP(char*, BYTE*);
 HRESULT SaveAs8bitBMP(char*, BYTE*, BYTE*, LONG, LONG);
@@ -1642,7 +1662,12 @@ void InitKserv()
 	{
 		SetLodLevel();
 	}
+	else
+	{
+		Log("Wrong values for LOD Mixer");
+	}
 	SetCameraData();
+	SetMLData();
 }
 
 BOOL WINAPI Override_QueryPerformanceFrequency(
@@ -1767,6 +1792,14 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 		lstrcat(cameraCfgFile, CAMERA_CONFIG_FILE);
 
 		ReadCameraConfig(&g_camera_config, cameraCfgFile);
+
+		// read ml configuration
+		char mlCfgFile[BUFLEN];
+		ZeroMemory(mlCfgFile, BUFLEN);
+		lstrcpy(mlCfgFile, mydir); 
+		lstrcat(mlCfgFile, ML_CONFIG_FILE);
+
+		ReadMLConfig(&g_ml_config, mlCfgFile);
 
 		// Put a JMP-hook on Direct3DCreate8
 		Log("JMP-hooking Direct3DCreate8...");
@@ -4110,4 +4143,37 @@ void SetCameraData()
 			Log("Problem adding stadium roof: VirtualProtect failed");
 
 	}
+}
+
+
+void SetMLData()
+{
+	DWORD protection = 0;
+	DWORD newProtection = PAGE_EXECUTE_READWRITE;
+	
+    if (
+		dta[ML_START_YEAR_1] && 
+		dta[ML_START_YEAR_2] && 
+		dta[ML_START_YEAR_3] && 
+		dta[ML_START_YEAR_4] && 
+		dta[ML_START_YEAR_5] && 
+		dta[ML_START_YEAR_6] && 
+		g_ml_config.mlStartingYear>0
+	)
+	{
+		int i;
+		for (i=0; i<6; i++)
+		{
+			DWORD* addr = (DWORD*)dta[ML_START_YEAR_1 + i];
+			if (VirtualProtect(addr, sizeof(DWORD), newProtection, &protection))
+			{
+				*(DWORD*)addr = (DWORD)(g_ml_config.mlStartingYear);
+				LogWithTwoNumbers("ML Starting year set to : %d at address: %08x", g_ml_config.mlStartingYear, (DWORD)addr);
+
+			}
+			else
+				Log("Problem setting camera zoom: VirtualProtect failed");
+		}
+    };
+
 }

@@ -67,8 +67,19 @@ typedef struct _CAMERA_CONFIG_STRUCT {
 	
 } CAMERA_CONFIG;
 
+#define ML_CONFIG_FILE "ml.cfg"
+#define DEFAULT_STARTING_YEAR 2003
+
+typedef struct _ML_CONFIG_STRUCT {
+	DWORD debug;
+	DWORD mlStartingYear;
+	
+} ML_CONFIG;
+
+
 BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile);
 BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile);
 BOOL ReadCameraConfig(CAMERA_CONFIG* config, char* cfgFile);
+BOOL ReadMLConfig(ML_CONFIG* config, char* cfgFile);
 
 #endif

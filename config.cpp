@@ -489,4 +489,63 @@ BOOL ReadCameraConfig(CAMERA_CONFIG* config, char* cfgFile)
 	return true;
 }
 
+/**
+ * Returns true if successful.
+ */
+BOOL ReadMLConfig(ML_CONFIG* config, char* cfgFile)
+{
+	if (config == NULL) return false;
+
+	FILE* cfg = fopen(cfgFile, "rt");
+	if (cfg == NULL) return false;
+
+	char str[BUFLEN];
+	char name[BUFLEN];
+	int value = 0;
+	float dvalue = 0.0f;
+
+	char *pName = NULL, *pValue = NULL, *comment = NULL;
+	while (true)
+	{
+		ZeroMemory(str, BUFLEN);
+		fgets(str, BUFLEN-1, cfg);
+		if (feof(cfg)) break;
+
+		// skip comments
+		comment = strstr(str, "#");
+		if (comment != NULL) comment[0] = '\0';
+
+		// parse the line
+		pName = pValue = NULL;
+		ZeroMemory(name, BUFLEN); value = 0;
+		char* eq = strstr(str, "=");
+		if (eq == NULL || eq[1] == '\0') continue;
+
+		eq[0] = '\0';
+		pName = str; pValue = eq + 1;
+
+		ZeroMemory(name, NULL); 
+		sscanf(pName, "%s", name);
+
+		if (lstrcmp(name, "debug")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadMLConfig: debug = (%d)", value);
+			config->debug = value;
+		}
+		else if (lstrcmp(name, "ml.starting.year")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadMLConfig: ml.starting.year = %d", value);
+			config->mlStartingYear = value;
+		}
+		
+	}
+	fclose(cfg);
+
+
+	return true;
+}
+
+
 
