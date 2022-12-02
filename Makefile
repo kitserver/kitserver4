@@ -63,9 +63,11 @@ kctrl.exe: kctrl.obj config.obj log.obj win32gui.obj
 kctrl.obj: kctrl.cpp kctrl.h config.h win32gui.h
 
 setupgui.obj: setupgui.cpp setupgui.h
-setup.exe: setup.obj detect.obj setupgui.obj imageutil.obj
-	$(LINK) $(LFLAGS) /out:setup.exe setup.obj detect.obj setupgui.obj imageutil.obj $(LIBS)
+setup.exe: setup.obj detect.obj setupgui.obj imageutil.obj setup.res
+	$(LINK) $(LFLAGS) /out:setup.exe setup.obj detect.obj setupgui.obj imageutil.obj setup.res $(LIBS)
 setup.obj: setup.cpp setup.h setupgui.h
+setup.res: setup.rc
+	$(RC) -r -fo setup.res setup.rc
 
 afstest.obj: afstest.cpp afsreader.h
 afstest.exe: afstest.obj afsreader.obj crc32.obj log.obj config.obj
