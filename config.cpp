@@ -417,3 +417,76 @@ BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile)
 	return true;
 }
 
+/**
+ * Returns true if successful.
+ */
+BOOL ReadCameraConfig(CAMERA_CONFIG* config, char* cfgFile)
+{
+	if (config == NULL) return false;
+
+	FILE* cfg = fopen(cfgFile, "rt");
+	if (cfg == NULL) return false;
+
+	char str[BUFLEN];
+	char name[BUFLEN];
+	int value = 0;
+	float dvalue = 0.0f;
+
+	char *pName = NULL, *pValue = NULL, *comment = NULL;
+	while (true)
+	{
+		ZeroMemory(str, BUFLEN);
+		fgets(str, BUFLEN-1, cfg);
+		if (feof(cfg)) break;
+
+		// skip comments
+		comment = strstr(str, "#");
+		if (comment != NULL) comment[0] = '\0';
+
+		// parse the line
+		pName = pValue = NULL;
+		ZeroMemory(name, BUFLEN); value = 0;
+		char* eq = strstr(str, "=");
+		if (eq == NULL || eq[1] == '\0') continue;
+
+		eq[0] = '\0';
+		pName = str; pValue = eq + 1;
+
+		ZeroMemory(name, NULL); 
+		sscanf(pName, "%s", name);
+
+		if (lstrcmp(name, "debug")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadCameraConfig: debug = (%d)", value);
+			config->debug = value;
+		}
+        else if (lstrcmp(name, "zoom")==0)
+        {
+            float fValue = 0.0f;
+            if (sscanf(pValue, "%f", &fValue)!=1) continue;
+            LogWithDouble("ReadCameraConfig: zoom = %0.1f", 
+                    (double)fValue);
+            config->zoom = fValue;
+        }
+		else if (lstrcmp(name, "fix_stadium_clipping")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadCameraConfig: fixStadiumClip = %d", value);
+			config->fixStadiumClip = value;
+		}
+		else if (lstrcmp(name, "add_stadium_roof")==0)
+		{
+			if (sscanf(pValue, "%d", &value)!=1) continue;
+			LogWithNumber("ReadCameraConfig: addStadiumRoof = %d", value);
+			config->addStadiumRoof = value;
+		}
+		
+	}
+	fclose(cfg);
+
+
+	return true;
+}
+
+

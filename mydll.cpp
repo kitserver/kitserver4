@@ -63,6 +63,14 @@ KSERV_CONFIG g_config = {
 	DEFAULT_LOD,
 	DEFAULT_LOD,
 };
+
+CAMERA_CONFIG g_camera_config = {
+	DEFAULT_DEBUG,
+	DEFAULT_ZOOM,
+	DEFAULT_FIX_CLIP,
+	DEFAULT_ADD_ROOF,
+};
+
 #pragma data_seg()
 #pragma comment(linker, "/section:.HKT,rws")
 
@@ -82,7 +90,6 @@ extern char* GAME_GUID[NUM_GUIDS];
 extern DWORD GAME_GUID_OFFSETS[NUM_GUIDS];
 
 #define CODELEN 26
-#define DATALEN 19
 
 char* WHICH_TEAM[] = { "HOME", "AWAY" };
 
@@ -194,6 +201,7 @@ DWORD codeArray[NUM_GUIDS][CODELEN] = {
 };
 
 // data array names
+#define DATALEN 22
 enum {
 	TEAM_IDS, TEAM_STRIPS, IDIRECT3DDEVICE8, NUMTEAMS, KIT_SLOTS, 
 	ANOTHER_KIT_SLOTS, MLDATA_PTRS, TEAM_COLLARS_PTR,
@@ -202,6 +210,7 @@ enum {
     INTRES_WIDTH, INTRES_HEIGHT,
 	LOD_TABLE,
 	LOD_VALUE_0, LOD_VALUE_1, LOD_VALUE_2, LOD_VALUE_3, LOD_VALUE_4,
+	CAMERA_ZOOM, FIX_STAD_CLIPPING, ADD_STAD_ROOF,
 };
 
 
@@ -216,6 +225,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0, 0,
 		0,
 		0, 0, 0, 0, 0, 
+		0, 0, 0,
 	},
 	// PES4 DEMO
 	{ 
@@ -226,6 +236,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0, 0,
 		0,
 		0, 0, 0, 0, 0, 
+		0, 0, 0,
 	},
 	// PES4 1.10
 	{ 
@@ -236,6 +247,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x215dce0, 0x215dce4,
 		0xaca7e4,
 		9223296, 9223440, 9223584, 9223728, 9223872, 
+		0x45e58d, 0x676737, 0x9da8C8,
 	},
 	// PES4 1.0
 	{ 
@@ -246,6 +258,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x215bd30, 0x215bd34,
 		0xac87fc,
 		9219184, 9219328, 9219472, 9219616, 9219760, 
+		0x45e3ad, 0x6764A7, 0x9d9890,
 	},
 	// WE8I US
 	{ 
@@ -256,6 +269,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x215dd20, 0x215dd24,
 		0xaca824,
 		9227168, 9227312, 9227456, 9227600, 9227744, 
+		0x45e55d, 0x676ed7, 0x9db600,
 	},
 	// WE8I K
 	{ 
@@ -266,6 +280,7 @@ DWORD dtaArray[NUM_GUIDS][DATALEN] = {
 		0x2154318, 0x215431c,
 		0x9e0068,
 		6775488, 6775632, 6775776, 6775920, 6776064, 
+		0x6d6f6d, 0x8bb417, 0x9ad584,
 	},
 
 
@@ -586,6 +601,8 @@ void ResetCyclesAndBuffers2(void);
 void LoadKDB();
 void FixReservedMemory(void);
 void SetLodLevel(void);
+void SetCameraData(void);
+
 HRESULT SaveAs8bitBMP(char*, BYTE*);
 HRESULT SaveAs8bitBMP(char*, BYTE*, BYTE*, LONG, LONG);
 HRESULT SaveAsBMP(char*, BYTE*, SIZE_T, LONG, LONG, int);
@@ -1336,7 +1353,6 @@ void InitKserv()
 				bptr[0] = 0xe8; bptr[5] = 0x90; // NOP
 				DWORD* ptr = (DWORD*)(code[C_SETFILEPOINTER_CS] + 1);
 				ptr[0] = (DWORD)JuceSetFilePointer - (DWORD)(code[C_SETFILEPOINTER_CS] + 5);
-				Log("salimos de SetFilePointer");
 				bSetFilePointerHooked = true;
 				Log("SetFilePointer HOOKED at code[C_SETFILEPOINTER_CS]");
 			}
@@ -1578,7 +1594,6 @@ void InitKserv()
 	}
 
 	// Determine adboards offsets
-
 	/*
 	for (b=0; b<ADBOARDS_COUNT; b++)
 	{
@@ -1589,7 +1604,6 @@ void InitKserv()
 		TRACE2("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
 		LogWithNumber("adboard offset is: %08x", g_adboardsTexs[b].dwOffset); 
 	}
-
 	*/
 
 	Log("Calculating etc_ee_tex.bin offset");
@@ -1628,6 +1642,7 @@ void InitKserv()
 	{
 		SetLodLevel();
 	}
+	SetCameraData();
 }
 
 BOOL WINAPI Override_QueryPerformanceFrequency(
@@ -1744,6 +1759,14 @@ EXTERN_C BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReser
 
 		Log("Log started.");
 		LogWithNumber("g_config.debug = %d", g_config.debug);
+
+		// read camera configuration
+		char cameraCfgFile[BUFLEN];
+		ZeroMemory(cameraCfgFile, BUFLEN);
+		lstrcpy(cameraCfgFile, mydir); 
+		lstrcat(cameraCfgFile, CAMERA_CONFIG_FILE);
+
+		ReadCameraConfig(&g_camera_config, cameraCfgFile);
 
 		// Put a JMP-hook on Direct3DCreate8
 		Log("JMP-hooking Direct3DCreate8...");
@@ -4009,7 +4032,6 @@ DWORD GetLodLevel(int selection)
 
 void SetLodLevel()
 {
-    if (dta[LOD_TABLE]) {
     if (dta[LOD_TABLE]) 
 	{
         DWORD protection = 0;
@@ -4024,12 +4046,68 @@ void SetLodLevel()
             addr[4] = GetLodLevel(g_config.lod5);
             
             char buf[80]; ZeroMemory(buf, 80);
-            sprintf(buf, "Lod levels set to %d,%d,%d,%d,%d.",
-                    GetLodLevel(0), GetLodLevel(0), GetLodLevel(0),
-                    GetLodLevel(0), GetLodLevel(0));
+            sprintf(buf, "Lod levels set to %08x,%08x,%08x,%08x,%08x.",
                     GetLodLevel(g_config.lod1), GetLodLevel(g_config.lod2), GetLodLevel(g_config.lod3),
                     GetLodLevel(g_config.lod4), GetLodLevel(g_config.lod5));
             Log(buf);
-        };
+        }
+		else
+			Log("Unable to set new LOD values: VirtualProtect failed");
     };
+}
+
+void SetCameraData()
+{
+	DWORD protection = 0;
+	DWORD newProtection = PAGE_EXECUTE_READWRITE;
+	DWORD addStadRoof = 0xbf800000;
+	
+    if (dta[CAMERA_ZOOM] && g_camera_config.zoom>0.0f) 
+	{
+        DWORD* addr = (DWORD*)dta[CAMERA_ZOOM];
+        if (VirtualProtect(addr, sizeof(float), newProtection, &protection))
+        {
+            *(float*)addr = (float)(g_camera_config.zoom);
+            
+            char buf[80]; ZeroMemory(buf, 80);
+            sprintf(buf, "Camera Zoom set to %0.1f",
+                    (float)(g_camera_config.zoom));
+            Log(buf);
+        }
+		else
+			Log("Problem setting camera zoom: VirtualProtect failed");
+    };
+	if (dta[FIX_STAD_CLIPPING] && g_camera_config.fixStadiumClip)
+	{
+        DWORD* addr = (DWORD*)dta[FIX_STAD_CLIPPING];
+        if (VirtualProtect(addr, 0x320, newProtection, &protection))
+        {
+            *(BYTE*)addr = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x4f) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x17e) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x195) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x225) = (BYTE)0xEB;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ce) = (BYTE)0xEB;
+
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2eb) = (BYTE)0x90;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ec) = (BYTE)0x90;
+            *(BYTE*)(dta[FIX_STAD_CLIPPING] + 0x2ed) = (BYTE)0x90;
+            Log("Stadium clipping fixed correctly");
+        }
+		else
+			Log("Problem fixing stadium clipping: VirtualProtect failed");
+
+	}
+	if (dta[ADD_STAD_ROOF] && g_camera_config.addStadiumRoof)
+	{
+        DWORD* addr = (DWORD*)dta[ADD_STAD_ROOF];
+        if (VirtualProtect(addr, sizeof(DWORD), newProtection, &protection))
+        {
+            *(DWORD*)addr = (DWORD)addStadRoof;
+            Log("Stadium roof added correctly");
+        }
+		else
+			Log("Problem adding stadium roof: VirtualProtect failed");
+
+	}
 }

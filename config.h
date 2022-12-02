@@ -54,7 +54,21 @@ typedef struct _KSERV_CONFIG_STRUCT {
 
 } KSERV_CONFIG;
 
+#define CAMERA_CONFIG_FILE "camerazoomer.cfg"
+#define DEFAULT_ZOOM 1430.0f
+#define DEFAULT_FIX_CLIP 0
+#define DEFAULT_ADD_ROOF 0
+
+typedef struct _CAMERA_CONFIG_STRUCT {
+	DWORD debug;
+    float zoom;
+	DWORD fixStadiumClip;
+	DWORD addStadiumRoof;
+	
+} CAMERA_CONFIG;
+
 BOOL ReadConfig(KSERV_CONFIG* config, char* cfgFile);
 BOOL WriteConfig(KSERV_CONFIG* config, char* cfgFile);
+BOOL ReadCameraConfig(CAMERA_CONFIG* config, char* cfgFile);
 
 #endif
