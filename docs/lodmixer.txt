@@ -71,5 +71,5 @@ LOD switching algorithm.
 4. CREDITS
 ----------
 Game algorithms analysis and programming by Juce and marqisspes6.
-Beta testing: NamedHwi, Master Saborio, Master_Splinter, FootballerPOMAH, galaxy
+Beta testing: NamedHwi, Master Saborio, byAhg37,Master_Splinter, FootballerPOMAH, galaxy
 
